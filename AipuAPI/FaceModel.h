@@ -66,7 +66,7 @@ public:
 	void RecognitionFaceFiles(string file, int client);
 	void FastOnlyDetect(vector<unsigned char> buffer);
 	void Tracking(); //vector<unsigned char> buffer
-	void InitTracking(); //vector<unsigned char> buffer
+	void InitTracking(); 
 	ConfigurationIFace* configuration = new ConfigurationIFace();
 	Rx::subject<Molded*> templateImage;
 	Rx::observable<Molded*> observableTemplate = templateImage.get_observable();
