@@ -27,7 +27,7 @@ public:
 	void CaptureFlow(int optionFlow);
 
 	void SetIpCamera(string ip);
-
+	void SetDeviceVideo(string device);
 	void SetFaceConfidenceThresh(int value);
 
 	void SetRefreshInterval(int value);
@@ -46,6 +46,13 @@ public:
 	void RecognitionFaceFiles(string file, int client);
 	void SetIsFinishLoadFiles(bool value);
 	bool GetIsFinishLoadFiles();
+	void ResetLowScore();
+	int GetCountLowScore();
+	void ResetCountNotDetect();
+	int GetCountNotDetect();
+	void SetDeepTrack(string value);
+	void ResetCountRepeatUser();
+	int GetCountRepeatUser();
 	string GetUserJSON();
 	string GetMessageError();
 

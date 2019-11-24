@@ -19,6 +19,13 @@ public:
 	void RecognitionFaceFiles(string file, int client);
 	void SetIsFinishLoadFiles(bool value);
 	bool GetIsFinishLoadFiles();
+	void ResetLowScore();
+	int GetCountLowScore();
+	void ResetCountNotDetect();
+	int GetCountNotDetect();
+	void ResetCountRepeatUser();
+	int GetCountRepeatUser();
+
 	Rx::subject<Either*> errorSubject;
 	Rx::observable<Either*> observableError = errorSubject.get_observable();
 

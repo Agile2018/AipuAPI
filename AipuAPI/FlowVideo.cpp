@@ -20,6 +20,7 @@ int refreshInterval = 2000;
 int countFrameTracking = 0;
 bool flagFirstDetect = false;
 bool flagTracking = false;
+
 ThreadPool* pool = new ThreadPool(2);
 
 FlowVideo::FlowVideo()
@@ -29,6 +30,7 @@ FlowVideo::FlowVideo()
 
 FlowVideo::~FlowVideo()
 {
+	TerminateITracking();
 	pool->shutdown();
 	delete backRest;
 }
@@ -264,52 +266,46 @@ GstFlowReturn NewSample(GstAppSink *appsink, gpointer /*data*/)
 
 	GstMapInfo map;
 	gst_buffer_map(buffer, &map, GST_MAP_READ);
-	int size = width * height * 1;
+	//int size = width * height * 1;
 	
-
+	
 	if (!flagTracking)
 	{
 		flagTracking = true;
 		pool->submit(FaceTracking, (char*)map.data, (int)map.size);
-		
-		
 		//std::async(std::launch::async, FaceTracking, (char*)map.data, (int)map.size);
 		/*std::thread tti(FaceTracking, (char*)map.data, (int)map.size);
 		tti.detach(); */
 	}
-
-	
 	std::thread tbi(BackProcessImage, (char*)map.data, (int)map.size, client);
 	tbi.detach();
-	
+
 	//pool->submit(BackProcessImage, (char*)map.data, (int)map.size, client);
-		
 
-
-	GBuffer* prevFrameBuffer = atomicBuffer.exchange(new GBuffer((char*)map.data, size));
+	GBuffer* prevFrameBuffer = atomicBuffer.exchange(new GBuffer((char*)map.data, (int)map.size));
 	if (prevFrameBuffer)
 	{
 		delete prevFrameBuffer;
 	}
-
 	
-
+		
 	//cv::Mat* prevFrame;
-	//prevFrame = atomicFrame.exchange(new cv::Mat(cv::Size(width, height),
-	//	CV_8UC1, (char*)map.data, cv::Mat::AUTO_STEP)); //CV_16U CV_8UC3
+	//prevFrame = atomicFrame.exchange(new cv::Mat(height * 3/2, width,
+	//	CV_8UC1, map.data)); //CV_16U CV_8UC3
+	//if (prevFrame) {
+
+	//	delete prevFrame;
+	//}
 
 	//g_print("size: %d width: %d height: %d \n", map.size, width, height);
-	//prevFrame = atomicFrame.exchange(new cv::Mat(cv::Size(width, height),
-	//	CV_8UC3, (char*)map.data, cv::Mat::AUTO_STEP)); //CV_16U CV_8UC3 height + height / 2
+	//prevFrame = atomicFrame.exchange(new cv::Mat(cv::Size(map.size, 1),
+	//	CV_8UC1, (char*)map.data)); //CV_16U CV_8UC3 height + height / 2
 
 	//prevFrame = atomicFrame.exchange(new cv::Mat(cv::Size(img.cols, img.rows),
 	//	CV_8UC3, (void*)img.data, cv::Mat::AUTO_STEP)); //CV_16U CV_8UC3
 
 	//prevFrame = atomicFrame.exchange(&img); //char*
-	/*if (prevFrame) {	
-		
-		delete prevFrame;
-	}*/
+	
 
 	
 
@@ -411,8 +407,9 @@ void FlowVideo::InitITracking() {
 
 	errorCode = IFACE_SetParam(objectHandler,
 		IFACE_PARAMETER_TRACK_DEEP_TRACK,
-		"true"); // IFACE_TRACK_DEEP_TRACK_DEFAULT
+		deepTrack.c_str()); // IFACE_TRACK_DEEP_TRACK_DEFAULT
 	error->CheckError(errorCode, error->medium);
+	
 }
 
 void FlowVideo::CaptureFlow(int optionFlow) {
@@ -454,103 +451,71 @@ void FlowVideo::CaptureFlow(int optionFlow) {
 	gst_element_set_state(GST_ELEMENT(pipeline), GST_STATE_PLAYING);
 
 	cv::namedWindow(nameWindow.c_str(), cv::WINDOW_NORMAL); //cv::WINDOW_GUI_EXPANDED
-
+	cv::moveWindow(nameWindow.c_str(), 1200, 100);
+	//cv::resizeWindow(nameWindow.c_str(), widthFrame, heightFrame);
 	while (!flagFlow) {
 		g_main_iteration(false);
 		
 		GBuffer* frameBuffer = atomicBuffer.load();
 		if (frameBuffer)
 		{
-			//clock_t timeStart1 = clock();
-			cv::Mat img = cv::imdecode(frameBuffer->GetBuffer(), cv::IMREAD_COLOR);
-			/*clock_t duration1 = clock() - timeStart1;
-			int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
-			printf("   imdecode BUFFER  time: %d \n", durationMs1);*/
 			
+			//clock_t timeStart1 = clock();
+			
+			cv::Mat img = cv::imdecode(cv::Mat(atomicBuffer.load()->GetBuffer()), cv::IMREAD_UNCHANGED);
 			if (img.data != NULL)
 			{
 				DrawRectangles(img);
 				cv::imshow(nameWindow.c_str(), img);
-				cv::waitKey(1000/sequenceFps);
-				/*if (cv::waitKey(1000/sequenceFps) == 27) {
+				cv::waitKey(1);
+				//cv::waitKey(1000/sequenceFps);
+				/*if (cv::waitKey(1000 / sequenceFps) == 27) {
 					flagFlow = true;
 				}*/
-				
+
 			}
 			
+			/*clock_t duration1 = clock() - timeStart1;
+			int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
+			printf("   imdecode BUFFER  time: %d \n", durationMs1);*/
+
 		}
-		
-
-
 
 		//cv::Mat* ptrFrameDraw = atomicMatDraw.load();
 		//cv::Mat frameDraw;
 		//cv::Mat* ptrFrameDraw = atomicFrame.load();
 		//if (ptrFrameDraw) {
-		//	//cv::Mat track = atomicFrame.load()[0].clone();
-		//	
-		//	/*ProcessTracking(track, &countFrameTracking, &flagFirstDetect);
-		//	countFrameTracking++;*/
-		//	/*if (!flagTracking)
-		//	{
-		//		flagTracking = true;
-		//		std::thread tti(&FlowVideo::ProcessTracking, this, track,
-		//			&countFrameTracking, &flagFirstDetect);
-		//		tti.detach();
-		//		countFrameTracking++;
-		//	}*/
-		//	
-		//	//frameDraw = atomicMatDraw.load()[0].clone();
-		//	/*cv::Mat* ptrMatDraw = atomicMatDraw.load();
-		//	if (ptrMatDraw) {
-		//		cv::Mat trackDraw = atomicMatDraw.load()[0].clone();
-		//		DrawRectangles(trackDraw);
+		//	//cv::Mat ter = atomicFrame.load()[0].clone();
 
-		//		cv::imshow(nameWindow.c_str(), trackDraw);
-		//	}*/
-		//	//cv::Mat trackDraw = atomicMatDraw.load()[0].clone();
-		//	/*if (!track.empty())
-		//	{
-		//		DrawRectangles(track);
-		//		cv::imshow(nameWindow.c_str(), track);
-		//	}*/
-		//	
-		//	
-		//	//cout << "Inside Show rows:" << atomicFrame.load()[0].rows << "  cols:" << atomicFrame.load()[0].cols << endl;
-		//	
-		//	clock_t timeStart1 = clock();
-		//	//cv::Mat frameRGB(atomicFrame.load()[0].rows, atomicFrame.load()[0].cols, CV_8UC4);
-		//	cv::Mat e;
-		//	atomicFrame.load()[0].convertTo(e, CV_8UC3);
-		//	//cv::cvtColor(atomicFrame.load()[0], e, cv::COLOR_GRAY2RGB); //xRGB COLOR_YUV2BGRA_I420		
-		//	clock_t duration1 = clock() - timeStart1;
-		//	int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
-		//	printf("   CHANGE COLOR  time: %d \n", durationMs1);
-
-		//	
-		//	//cout << "Outside Show" << endl;
-		//	/*cv::Mat m = atomicFrame.load()[0];*/
-		//	//cv::imwrite("5555.png", frameRGB);
-		//	cv::imshow(nameWindow.c_str(), e);
-		//	if (cv::waitKey(25) == 27) {
-		//		flagFlow = true;
+		//	cv::Mat img = cv::imdecode(atomicFrame.load()[0], cv::IMREAD_UNCHANGED); //IMREAD_COLOR IMREAD_UNCHANGED
+		//	//cv::Mat img;
+		//	//atomicFrame.load()[0].convertTo(img, CV_32FC1, 255.0);
+		//	//cv::merge(atomicFrame.load(), 3, img);
+		//	//cv::cvtColor(atomicFrame.load()[0], img, cv::COLOR_GRAY2RGB); COLOR_YUV2BGRA_I420 COLOR_YUV420sp2RGB
+		//	if (img.data != NULL) {
+		//		DrawRectangles(img);
+		//		cv::imshow(nameWindow.c_str(), img);
+		//		//cv::waitKey(1);
+		//		//cv::waitKey(1000/sequenceFps);
+		//		if (cv::waitKey(1000 / sequenceFps) == 27) {
+		//			flagFlow = true;
+		//		}
 		//	}
-		//		
 		//	
-		//	
-
-		//	
-		//	//track.release();
 		//}
 		
 	}
-	cv::destroyWindow(nameWindow.c_str());
+	
 	gst_element_set_state(GST_ELEMENT(pipeline), GST_STATE_NULL);
 	gst_object_unref(GST_OBJECT(pipeline));
-	std::atomic_init(&atomicBuffer, 0);
+	std::atomic_init(&atomicBuffer, 0);	
+	cv::destroyWindow(nameWindow.c_str());
+	for (int i = 0; i < NUM_TRACKED_OBJECTS; i++) {
+		ClearCoordinatesImage(i);
+	}
+	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	
-	TerminateITracking();
-
+	
 }
 
 
@@ -580,10 +545,7 @@ void FlowVideo::TerminateITracking() {
 
 	errorCode = IFACE_ReleaseEntity(faceHandlerTracking);
 	error->CheckError(errorCode, error->less);
-
-	for (int i = 0; i < NUM_TRACKED_OBJECTS; i++) {
-		ClearCoordinatesImage(i);
-	}
+	
 }
 
 gchar* FlowVideo::DescriptionFlow(int optionFlow) {
@@ -598,9 +560,9 @@ gchar* FlowVideo::DescriptionFlow(int optionFlow) {
 			"! decodebin ! videoconvert ! videoscale method=%d "
 			"! video/x-raw,width=(int)%d,height=(int)%d,format=(string)I420 "
 			"! jpegenc quality=100 "
-			"! appsink name=sink emit-signals=true sync=false max-buffers=0 drop=true",
+			"! appsink name=sink emit-signals=true sync=false max-buffers=1 drop=true",
 			ipCamera.c_str(), videoScaleMethod, widthFrame, heightFrame
-		);
+		);  // drop-on-latency=true
 		break;
 	case 2: // FILE		
 		descr = g_strdup_printf(
@@ -609,11 +571,20 @@ gchar* FlowVideo::DescriptionFlow(int optionFlow) {
 			"! videobalance contrast=1 brightness=0 saturation=1 "
 			"! video/x-raw, width=(int)%d, height=(int)%d, format=(string)I420  "	
 			"! jpegenc quality=100 "
-			"! appsink name=sink emit-signals=true sync=true max-buffers=0 drop=true",
+			"! appsink name=sink emit-signals=true sync=true max-buffers=1 drop=true",
 			fileVideo.c_str(), videoScaleMethod, widthFrame, heightFrame
 		);
 		break;
-	case 3: // CAMERA  
+	case 3: // CAMERA   
+		descr = g_strdup_printf(
+			"v4l2src device=%s "
+			"! decodebin ! videoconvert ! videoscale method=%d "
+			"! videobalance contrast=1 brightness=0 saturation=1 "
+			"! video/x-raw, width=(int)%d, height=(int)%d, format=(string)I420  "
+			"! jpegenc quality=100 "
+			"! appsink name=sink emit-signals=true sync=true max-buffers=0 drop=true",
+			deviceVideo.c_str(), videoScaleMethod, widthFrame, heightFrame
+		); 
 		break;
 	}
 	return descr;
@@ -637,3 +608,30 @@ void FlowVideo::ShowWindow(int option) {
 
 }
 
+void FlowVideo::ResetLowScore() {
+	backRest->ResetLowScore();
+}
+
+int FlowVideo::GetCountLowScore() {
+	return backRest->GetCountLowScore();
+}
+
+void FlowVideo::ResetCountNotDetect() {
+	backRest->ResetCountNotDetect();
+}
+
+int FlowVideo::GetCountNotDetect() {
+	return backRest->GetCountNotDetect();
+}
+
+void FlowVideo::SetDeepTrack(string value) {
+	deepTrack = value;
+}
+
+void FlowVideo::ResetCountRepeatUser() {
+	backRest->ResetCountRepeatUser();
+}
+
+int FlowVideo::GetCountRepeatUser() {
+	return backRest->GetCountRepeatUser();
+}

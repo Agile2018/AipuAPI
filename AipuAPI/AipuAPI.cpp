@@ -154,3 +154,35 @@ void AipuAPI::SetIsFinishLoadFiles(bool value) {
 bool AipuAPI::GetIsFinishLoadFiles() {
 	return flowVideo->GetIsFinishLoadFiles();
 }
+
+void AipuAPI::ResetLowScore() {
+	flowVideo->ResetLowScore();
+}
+
+int AipuAPI::GetCountLowScore() {
+	return flowVideo->GetCountLowScore();
+}
+
+void AipuAPI::ResetCountNotDetect() {
+	flowVideo->ResetCountNotDetect();
+}
+
+int AipuAPI::GetCountNotDetect() {
+	return flowVideo->GetCountNotDetect();
+}
+
+void AipuAPI::SetDeviceVideo(string device) {
+	flowVideo->SetDeviceVideo(device);
+}
+
+void AipuAPI::SetDeepTrack(string value) {
+	flowVideo->SetDeepTrack(value);
+}
+
+void AipuAPI::ResetCountRepeatUser() {
+	flowVideo->ResetCountRepeatUser();
+}
+
+int AipuAPI::GetCountRepeatUser() {
+	return flowVideo->GetCountRepeatUser();
+}

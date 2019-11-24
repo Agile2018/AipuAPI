@@ -11,6 +11,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include "ErrorFaceLib.h"
 
 class FlowVideo
@@ -41,6 +42,10 @@ public:
 
 	void SetIpCamera(string ip) {
 		ipCamera = ip;
+	}
+
+	void SetDeviceVideo(string device) {
+		deviceVideo = device;
 	}
 
 	void SetVideoScaleMethod(int value) {
@@ -81,7 +86,13 @@ public:
 
 	void SetIsFinishLoadFiles(bool value);
 	bool GetIsFinishLoadFiles();
-
+	void ResetLowScore();
+	int GetCountLowScore();
+	void ResetCountNotDetect();
+	int GetCountNotDetect();
+	void SetDeepTrack(string value);
+	void ResetCountRepeatUser();
+	int GetCountRepeatUser();
 	Rx::subject<string> errorSubject;
 	Rx::observable<string> observableError = errorSubject.get_observable();
 
@@ -96,6 +107,8 @@ private:
 	int faceConfidenceThresh = 450;         // face detection confidence threshold		
 	string ipCamera;
 	string fileVideo;
+	string deviceVideo = "/dev/video0";
+	string deepTrack = "true";
 	int videoScaleMethod = 1; //3 1
 	int widthFrame = 640;
 	int heightFrame = 480;	

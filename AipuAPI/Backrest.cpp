@@ -190,3 +190,27 @@ void Backrest::SetIsFinishLoadFiles(bool value) {
 bool Backrest::GetIsFinishLoadFiles() {
 	return faceModel->GetIsFinishLoadFiles();
 }
+
+void Backrest::ResetLowScore() {
+	faceModel->ResetLowScore();
+}
+
+int Backrest::GetCountLowScore() {
+	return faceModel->GetCountLowScore();
+}
+
+void Backrest::ResetCountNotDetect() {
+	faceModel->ResetCountNotDetect();
+}
+
+int Backrest::GetCountNotDetect() {
+	return faceModel->GetCountNotDetect();
+}
+
+void Backrest::ResetCountRepeatUser() {
+	faceIdentify->ResetCountRepeatUser();
+}
+
+int Backrest::GetCountRepeatUser() {
+	return faceIdentify->GetCountRepeatUser();
+}
