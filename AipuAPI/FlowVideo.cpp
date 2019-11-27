@@ -20,8 +20,9 @@ int refreshInterval = 2000;
 int countFrameTracking = 0;
 bool flagFirstDetect = false;
 bool flagTracking = false;
-
+bool isDecodeImage = false;
 ThreadPool* pool = new ThreadPool(2);
+
 
 FlowVideo::FlowVideo()
 {
@@ -124,7 +125,7 @@ void DrawRectangles(cv::Mat workMat) {
 
 void FlowVideo::LoadConfiguration(string nameFile) {
 	pool->init();
-	ObserverEvent();
+	ObserverEvent();	
 	backRest->LoadConfiguration(nameFile);
 	//gst_init(NULL, NULL);
 }
@@ -241,6 +242,28 @@ void BackProcessImage(char* data, int size, int client) {
 	backRest->ProcessImageInBack(data, size, client);
 }
 
+void SetAtomicFrame(std::vector<uchar> bufferMap) {
+	//if (!isDecodeImage)
+	//{
+	//	isDecodeImage = true;
+	//	cv::Mat* prevFrame;
+	//	prevFrame = atomicFrame.exchange(new cv::Mat(cv::imdecode(bufferMap,
+	//		cv::IMREAD_UNCHANGED))); //CV_16U CV_8UC3
+	//	if (prevFrame) {
+
+	//		delete prevFrame;
+	//	}
+	//	isDecodeImage = false;
+	//}
+	
+	cv::Mat* prevFrame;
+	prevFrame = atomicFrame.exchange(new cv::Mat(cv::imdecode(bufferMap,
+		cv::IMREAD_UNCHANGED))); 
+	if (prevFrame) {
+
+		delete prevFrame;
+	}
+}
 
 GstFlowReturn NewPreroll(GstAppSink* /*appsink*/, gpointer /*data*/)
 {
@@ -268,25 +291,57 @@ GstFlowReturn NewSample(GstAppSink *appsink, gpointer /*data*/)
 	gst_buffer_map(buffer, &map, GST_MAP_READ);
 	//int size = width * height * 1;
 	
-	
-	if (!flagTracking)
+	if (map.data != NULL)
 	{
-		flagTracking = true;
-		pool->submit(FaceTracking, (char*)map.data, (int)map.size);
-		//std::async(std::launch::async, FaceTracking, (char*)map.data, (int)map.size);
-		/*std::thread tti(FaceTracking, (char*)map.data, (int)map.size);
-		tti.detach(); */
+		if (!flagTracking)
+		{
+			flagTracking = true;
+			pool->submit(FaceTracking, (char*)map.data, (int)map.size);
+			//std::async(std::launch::async, FaceTracking, (char*)map.data, (int)map.size);
+			/*std::thread tti(FaceTracking, (char*)map.data, (int)map.size);
+			tti.detach(); */
+		}
+		std::thread tbi(BackProcessImage, (char*)map.data, (int)map.size, client);
+		tbi.detach();
+
+		GBuffer* prevFrameBuffer = atomicBuffer.exchange(new GBuffer((char*)map.data, (int)map.size));
+		if (prevFrameBuffer)
+		{
+			delete prevFrameBuffer;
+		}
+		/*std::vector<uchar> bufferMap((char*)map.data, (char*)map.data + (int)map.size);
+		cv::Mat* prevFrame;
+		prevFrame = atomicFrame.exchange(new cv::Mat(cv::imdecode(bufferMap,
+			cv::IMREAD_UNCHANGED)));
+		if (prevFrame) {
+
+			delete prevFrame;
+		}*/
+		//pool->submit(SetAtomicFrame, bufferMap);
+		
+		//cv::Mat* prevFrame;
+		//prevFrame = atomicFrame.exchange(new cv::Mat(cv::imdecode(atomicBuffer.load()->GetBuffer(), 
+		//	cv::IMREAD_UNCHANGED))); //CV_16U CV_8UC3
+		//if (prevFrame) {
+
+		//	delete prevFrame;
+		//}
+		//cv::Mat* prevFrame;
+		//prevFrame = atomicFrame.exchange(new cv::Mat(cv::Size(width, height),
+		//CV_8UC3, (char*)map.data)); //CV_16U CV_8UC3
+		//if (prevFrame) {
+
+		//	delete prevFrame;
+		//}
+
+
+		gst_buffer_unmap(buffer, &map);
 	}
-	std::thread tbi(BackProcessImage, (char*)map.data, (int)map.size, client);
-	tbi.detach();
+	
 
 	//pool->submit(BackProcessImage, (char*)map.data, (int)map.size, client);
 
-	GBuffer* prevFrameBuffer = atomicBuffer.exchange(new GBuffer((char*)map.data, (int)map.size));
-	if (prevFrameBuffer)
-	{
-		delete prevFrameBuffer;
-	}
+	
 	
 		
 	//cv::Mat* prevFrame;
@@ -306,10 +361,7 @@ GstFlowReturn NewSample(GstAppSink *appsink, gpointer /*data*/)
 
 	//prevFrame = atomicFrame.exchange(&img); //char*
 	
-
 	
-
-	gst_buffer_unmap(buffer, &map);
 	gst_sample_unref(sample);	
 	return GST_FLOW_OK;
 }
@@ -409,7 +461,8 @@ void FlowVideo::InitITracking() {
 		IFACE_PARAMETER_TRACK_DEEP_TRACK,
 		deepTrack.c_str()); // IFACE_TRACK_DEEP_TRACK_DEFAULT
 	error->CheckError(errorCode, error->medium);
-	
+		
+	flagTracking = false;
 }
 
 void FlowVideo::CaptureFlow(int optionFlow) {
@@ -461,19 +514,27 @@ void FlowVideo::CaptureFlow(int optionFlow) {
 		{
 			
 			//clock_t timeStart1 = clock();
-			
-			cv::Mat img = cv::imdecode(cv::Mat(atomicBuffer.load()->GetBuffer()), cv::IMREAD_UNCHANGED);
-			if (img.data != NULL)
+			try
 			{
-				DrawRectangles(img);
-				cv::imshow(nameWindow.c_str(), img);
-				cv::waitKey(1);
-				//cv::waitKey(1000/sequenceFps);
-				/*if (cv::waitKey(1000 / sequenceFps) == 27) {
-					flagFlow = true;
-				}*/
-
+				cv::Mat img = cv::imdecode(atomicBuffer.load()->GetBuffer(), cv::IMREAD_UNCHANGED);
+				if (img.data != NULL)
+				{
+					DrawRectangles(img);
+					cv::imshow(nameWindow.c_str(), img);
+					cv::waitKey(1);
+					//cv::waitKey(1000/sequenceFps);
+					/*if (cv::waitKey(1000 / sequenceFps) == 27) {
+						flagFlow = true;
+					}*/
+					
+					
+				}
 			}
+			catch (const std::exception& ex)
+			{
+				cout << ex.what() << endl;
+			}
+			
 			
 			/*clock_t duration1 = clock() - timeStart1;
 			int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
@@ -485,19 +546,29 @@ void FlowVideo::CaptureFlow(int optionFlow) {
 		//cv::Mat frameDraw;
 		//cv::Mat* ptrFrameDraw = atomicFrame.load();
 		//if (ptrFrameDraw) {
-		//	//cv::Mat ter = atomicFrame.load()[0].clone();
-
-		//	cv::Mat img = cv::imdecode(atomicFrame.load()[0], cv::IMREAD_UNCHANGED); //IMREAD_COLOR IMREAD_UNCHANGED
+		//	//clock_t timeStart1 = clock();
+		//	//cv::Mat img = atomicFrame.load()[0].clone();
+		//	/*clock_t duration1 = clock() - timeStart1;
+		//	int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
+		//	printf("   CLONE MAT  time: %d \n", durationMs1);*/
+		//	//cv::Mat img = cv::imdecode(atomicFrame.load()[0], cv::IMREAD_UNCHANGED); //IMREAD_COLOR IMREAD_UNCHANGED
 		//	//cv::Mat img;
 		//	//atomicFrame.load()[0].convertTo(img, CV_32FC1, 255.0);
 		//	//cv::merge(atomicFrame.load(), 3, img);
 		//	//cv::cvtColor(atomicFrame.load()[0], img, cv::COLOR_GRAY2RGB); COLOR_YUV2BGRA_I420 COLOR_YUV420sp2RGB
+		//	cv::Mat img = atomicFrame.load()[0].clone();
+		//	//cout << atomicFrame.load()[0].cols << " " << atomicFrame.load()[0].rows << endl;
+		//	//cv::Mat in[] = { atomicFrame.load()[0], atomicFrame.load()[0], atomicFrame.load()[0] };
+		//	//cv::merge(in, 3, img);
+		//	//cv::cvtColor(atomicFrame.load()[0], img, cv::COLOR_GRAY2RGB);
+		//	/*atomicFrame.load()[0].convertTo(atomicFrame.load()[0], CV_8UC3);
+		//	cv::cvtColor(atomicFrame.load()[0], img, cv::COLOR_GRAY2RGB);*/
 		//	if (img.data != NULL) {
-		//		DrawRectangles(img);
+		//		//DrawRectangles(img);
 		//		cv::imshow(nameWindow.c_str(), img);
 		//		//cv::waitKey(1);
 		//		//cv::waitKey(1000/sequenceFps);
-		//		if (cv::waitKey(1000 / sequenceFps) == 27) {
+		//		if (cv::waitKey(1) == 27) {
 		//			flagFlow = true;
 		//		}
 		//	}
@@ -517,7 +588,6 @@ void FlowVideo::CaptureFlow(int optionFlow) {
 	
 	
 }
-
 
 void FlowVideo::TerminateITracking() {
 	int errorCode;
@@ -555,25 +625,25 @@ gchar* FlowVideo::DescriptionFlow(int optionFlow) {
 	case 1: // IP CAMERA
 		
 		descr = g_strdup_printf(
-			"rtspsrc location=%s latency=0 "
+			"rtspsrc location=%s "
 			"! application/x-rtp, payload=96 ! rtph264depay ! h264parse ! avdec_h264 "
-			"! decodebin ! videoconvert ! videoscale method=%d "
-			"! video/x-raw,width=(int)%d,height=(int)%d,format=(string)I420 "
-			"! jpegenc quality=100 "
+			"! decodebin ! videoconvert ! videoscale method=%d ! videorate "
+			"! video/x-raw, width=(int)%d, height=(int)%d, format=(string)I420, framerate=30/1 "
+			"! jpegenc quality=30 "
 			"! appsink name=sink emit-signals=true sync=false max-buffers=1 drop=true",
 			ipCamera.c_str(), videoScaleMethod, widthFrame, heightFrame
-		);  // drop-on-latency=true
+		);  // latency=0  drop-on-latency=true
 		break;
 	case 2: // FILE		
 		descr = g_strdup_printf(
 			"filesrc location=%s "
 			"! decodebin ! videoconvert ! videoscale method=%d "
 			"! videobalance contrast=1 brightness=0 saturation=1 "
-			"! video/x-raw, width=(int)%d, height=(int)%d, format=(string)I420  "	
-			"! jpegenc quality=100 "
+			"! video/x-raw, width=(int)%d, height=(int)%d, format=(string)I420 "	
+			"! jpegenc quality=30  "
 			"! appsink name=sink emit-signals=true sync=true max-buffers=1 drop=true",
 			fileVideo.c_str(), videoScaleMethod, widthFrame, heightFrame
-		);
+		);// "! jpegenc quality=20 " pngenc RGB
 		break;
 	case 3: // CAMERA   
 		descr = g_strdup_printf(
@@ -581,8 +651,8 @@ gchar* FlowVideo::DescriptionFlow(int optionFlow) {
 			"! decodebin ! videoconvert ! videoscale method=%d "
 			"! videobalance contrast=1 brightness=0 saturation=1 "
 			"! video/x-raw, width=(int)%d, height=(int)%d, format=(string)I420  "
-			"! jpegenc quality=100 "
-			"! appsink name=sink emit-signals=true sync=true max-buffers=0 drop=true",
+			"! jpegenc quality=30 "
+			"! appsink name=sink emit-signals=true sync=true max-buffers=1 drop=true",
 			deviceVideo.c_str(), videoScaleMethod, widthFrame, heightFrame
 		); 
 		break;
