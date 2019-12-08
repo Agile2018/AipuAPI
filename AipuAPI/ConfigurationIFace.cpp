@@ -39,7 +39,9 @@ void ConfigurationIFace::SetValueJSONToConfiguration() {
 		else if (it.key().asString() == MODEDETECT) {
 			modeDetect = it->asInt();
 		}
-
+		else if (it.key().asString() == EXTRACTIONMODE) {
+			extractionMode = it->asInt();
+		}
 	}
 
 }
@@ -68,6 +70,7 @@ void ConfigurationIFace::ParseMapToJSON() {
 	params.insert(std::pair<std::string, std::int16_t>(MAXEYE, maxEyeDistance));
 	params.insert(std::pair<std::string, std::int16_t>(PRECISION, accuracy));
 	params.insert(std::pair<std::string, std::int16_t>(MODEDETECT, modeDetect));
+	params.insert(std::pair<std::string, std::int16_t>(EXTRACTIONMODE, extractionMode));
 	std::map<std::string, std::int16_t>::const_iterator it = params.begin(),
 		end = params.end();
 

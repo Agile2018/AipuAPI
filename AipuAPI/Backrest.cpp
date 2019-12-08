@@ -164,6 +164,12 @@ void Backrest::SetNameFileConfigurationIdentify(string name) {
 	faceIdentify->LoadConnection();
 }
 
+void Backrest::LoadConnectionIdentify() {
+	faceIdentify = new FaceIndentify();
+	ObserverIdentifyFace();
+	SetNameFileConfigurationIdentify(configurationFile->GetNameFileConfigurationIdentify());
+}
+
 void Backrest::SetNameFileConfigurationDatabase(string name) {
 	database->configuration->SetNameFileConfiguration(name);
 	database->configuration->ParseJSONToObject();

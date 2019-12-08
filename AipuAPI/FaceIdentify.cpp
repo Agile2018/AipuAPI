@@ -18,15 +18,27 @@ void FaceIndentify::LoadConnection() {
 	errorCode = connectToDatabase(cstr);
 	cout << "connectToDatabase returns " << errorCode << endl;	
 
+	/*errorCode = IEngine_InitModule();
+	error->CheckError(errorCode, error->medium);
+	errorCode = IEngine_SetParameter(CFG_IDENTIFICATION_SPEED, 4);
+	error->CheckError(errorCode, error->medium);
+	errorCode = IEngine_SetParameter(CFG_MAX_ROTATION, 90);
+	error->CheckError(errorCode, error->medium);
+	errorCode = IEngine_Connect(cstr);
+	error->CheckError(errorCode, error->medium);*/
+
+
+	/*errorCode = IEngine_ClearDatabase();
+	error->CheckError(errorCode, error->medium);*/
 }
 
 void FaceIndentify::SetParamsIdentify() {
 	int errorCode;
 	//std::string paramsIdentify = configuration->ParseMapToJSONForIdentify();	
-	std::string paramsIdentify = format->FormatString("{\"A_IdentificationSpeed\": %d, \"A_MinEyeDist\": %d, \"A_MaxEyeDist\": %d, \"A_FaceDetectionForced\": %d}",
-		configuration->GetIdentificationSpeed(),
-		configuration->GetMinEyeDistance(),
-		configuration->GetMaxEyeDistance(), configuration->GetFaceDetectionForced());
+	std::string paramsIdentify = format->FormatString("{\"A_IdentificationSpeed\": %d, \"A_SimilarityThreshold\": %d, \"A_BestMatchedCandidates\": %d}",
+		configuration->GetIdentificationSpeed(), 
+		configuration->GetSimilarityThreshold(),
+		configuration->GetBestMatchedCandidates());
 	errorCode = setBiometricParameters(paramsIdentify.c_str());
 	
 	cout << "setBiometricParameters returns " << errorCode << endl;
@@ -71,6 +83,47 @@ void FaceIndentify::EnrollUser(Molded* modelImage) {
 	}
 	flagEnroll = false;
 
+
+	//errorCode = IEngine_AddFaceTemplate(user, templateData, modelImage->GetMoldSize());
+	//if (errorCode == IENGINE_E_NOERROR) {
+	//	User* userForDatabase = new User();
+
+	//	errorCode = IEngine_Connect("iengine.db");
+	//	error->CheckError(errorCode, error->medium);
+
+	//	errorCode = IEngine_FindUser(user, &userID, &score);
+	//	if (userID == 0 && isRegister)
+	//	{
+
+	//		errorCode = IEngine_RegisterUser(user, &userID);
+	//		error->CheckError(errorCode, error->medium);
+	//		if (errorCode == IENGINE_E_NOERROR) {
+	//			userForDatabase->SetIsNew(true);
+	//		}
+	//	}
+	//	if (errorCode == IENGINE_E_NOERROR && userID != 0) {
+	//		/*userForDatabase->SetUserIdIFace(userID);
+	//		userForDatabase->SetPathImageTemp(modelImage->GetPathImage());
+	//		userForDatabase->SetClient(modelImage->GetIdClient());*/
+	//		if (!userForDatabase->GetIsNew())
+	//		{
+	//			countRepeatUser++;
+	//		}
+	//		userForDatabase->SetUserIdIFace(userID);
+	//		userForDatabase->SetClient(modelImage->GetIdClient());
+	//		userForDatabase->SetCropImageData(modelImage->GetCropImageData());
+	//		userForDatabase->SetMoldCropHeight(modelImage->GetMoldCropHeight());
+	//		userForDatabase->SetMoldCropLength(modelImage->GetMoldCropLength());
+	//		userForDatabase->SetMoldCropWidth(modelImage->GetMoldCropWidth());
+	//		shootUser.on_next(userForDatabase);
+	//	}
+	//}
+	//else {
+	//	error->CheckError(errorCode, error->medium);
+	//}
+
+	//errorCode = IEngine_FreeUser(user);
+	//error->CheckError(errorCode, error->medium);
 }
 
 void FaceIndentify::ObserverError() {

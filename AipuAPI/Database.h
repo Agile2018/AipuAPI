@@ -62,6 +62,7 @@ private:
 	const string DATASOURCE = "MongoDB";
 	int lastUserId = 0;
 	int lastClient = 0;
+	int countRepeatOfSomeUser = 0;
 	Rx::subscriber<Either*> shootError = errorSubject.get_subscriber();
 	Rx::subscriber<string> shootUserJSON = userSubject.get_subscriber();
 	ErrorAipuLib* error = new ErrorAipuLib();

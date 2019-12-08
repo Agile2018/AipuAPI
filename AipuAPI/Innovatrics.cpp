@@ -43,6 +43,17 @@ void Innovatrics::InitLibrary() {
 		error->CheckError(errorCode, error->gross);
 	}
 	cout << "initLibrary initLibrary " << errorCode << endl;
+	
+}
+
+void Innovatrics::InitLibraryIdentify() {
+	/*int errorCode;
+	auto initData = "{\"licenseFile\":\"iengine.lic\"}";
+	errorCode = initLibrary(initData);
+	if (errorCode != IFACE_OK) {
+		error->CheckError(errorCode, error->gross);
+	}
+	cout << "initLibrary initLibrary " << errorCode << endl;*/
 }
 
 bool Innovatrics::InitParamsGraphicProcessor() {

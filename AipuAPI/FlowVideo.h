@@ -48,6 +48,18 @@ public:
 		deviceVideo = device;
 	}
 
+	void SetTrackingMode(int mode) {
+		trackingMode = mode;
+	}
+
+	void SetTrackSpeed(int speed) {
+		trackSpeed = speed;
+	}
+
+	void SetMotionOptimization(int motion) {
+		motionOptimization = motion;
+	}
+
 	void SetVideoScaleMethod(int value) {
 		videoScaleMethod = value;
 	}
@@ -93,6 +105,10 @@ public:
 	void SetDeepTrack(string value);
 	void ResetCountRepeatUser();
 	int GetCountRepeatUser();
+	void LoadConnectionIdentify();
+	void StatePlay();
+	void StatePaused();
+
 	Rx::subject<string> errorSubject;
 	Rx::observable<string> observableError = errorSubject.get_observable();
 
@@ -105,6 +121,9 @@ private:
 	int minEyeDistance = 20;          // minimal eye distance in input image
 	int maxEyeDistance = 200;         // maximal eye distance in input image
 	int faceConfidenceThresh = 450;         // face detection confidence threshold		
+	int trackingMode = 0;
+	int trackSpeed = 0;
+	int motionOptimization = 0;
 	string ipCamera;
 	string fileVideo;
 	string deviceVideo = "/dev/video0";

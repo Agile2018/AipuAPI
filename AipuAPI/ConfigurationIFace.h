@@ -29,6 +29,10 @@ public:
 
 	void SetModeDetect(int mode) {
 		modeDetect = mode;
+	}	
+
+	void SetExtractionMode(int mode) {
+		extractionMode = mode;
 	}
 
 	int GetMinEyeDistance() {
@@ -50,7 +54,11 @@ public:
 	int GetModeDetect() {
 		return modeDetect;
 	}
-	
+		
+	int GetExtractionMode() {
+		return extractionMode;
+	}
+
 	Rx::subject<Either*> errorSubject;
 	Rx::observable<Either*> observableError = errorSubject.get_observable();
 private:
@@ -58,7 +66,8 @@ private:
 	const int MIN_EYE_DISTANCE = 25;
 	const int MAX_EYE_DISTANCE = 200;
 	const int ACCURACY = 600;
-	const int MODE_DETECT = 1;	
+	const int MODE_DETECT = 1;		
+	const int EXTRACTION_MODE = 1;
 
 	Rx::subscriber<Either*> shootError = errorSubject.get_subscriber();
 	ErrorFaceLib* error = new ErrorFaceLib();
@@ -67,14 +76,15 @@ private:
 	int maxDetect = MAX_DETECT;
 	int accuracy = ACCURACY;
 	int modeDetect = MODE_DETECT;
-	
+	int extractionMode = EXTRACTION_MODE;
+
 	const string PARAMS = "Params";
 	const string MAXFACES = "maxfaces";
 	const string MINEYE = "mineye";
 	const string MAXEYE = "maxeye";
 	const string PRECISION = "accuracy";
-	const string MODEDETECT = "modedetect";
-
+	const string MODEDETECT = "modedetect";	
+	const string EXTRACTIONMODE = "extractionmode";
 	const string CONFIGURATION = "configuration";
 	const string DETECT_CONFIGURATION = "detect_configuration";
 

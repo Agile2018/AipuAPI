@@ -25,7 +25,7 @@ public:
 	int GetCountNotDetect();
 	void ResetCountRepeatUser();
 	int GetCountRepeatUser();
-
+	void LoadConnectionIdentify();
 	Rx::subject<Either*> errorSubject;
 	Rx::observable<Either*> observableError = errorSubject.get_observable();
 

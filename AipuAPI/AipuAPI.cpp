@@ -22,6 +22,7 @@ AipuAPI::~AipuAPI()
 
 void AipuAPI::Terminate() {
 	innovatrics->Terminate();
+	isLoadIdentify = false;
 }
 
 void AipuAPI::InitLibrary()
@@ -37,6 +38,16 @@ void AipuAPI::InitLibrary()
 
 	innovatrics->SetParamsLibrary();
 	innovatrics->InitLibrary();
+}
+
+void AipuAPI::InitLibraryIdentify() {
+	if (!isLoadIdentify)
+	{
+		isLoadIdentify = true;
+		innovatrics->InitLibraryIdentify();
+		flowVideo->LoadConnectionIdentify();
+	}
+	
 }
 
 void AipuAPI::LoadConfiguration(string nameFile) {
@@ -185,4 +196,24 @@ void AipuAPI::ResetCountRepeatUser() {
 
 int AipuAPI::GetCountRepeatUser() {
 	return flowVideo->GetCountRepeatUser();
+}
+
+void AipuAPI::SetTrackingMode(int mode) {
+	flowVideo->SetTrackingMode(mode);
+}
+
+void AipuAPI::SetTrackSpeed(int speed) {
+	flowVideo->SetTrackSpeed(speed);
+}
+
+void AipuAPI::SetMotionOptimization(int motion) {
+	flowVideo->SetMotionOptimization(motion);
+}
+
+void AipuAPI::StatePlay() {
+	flowVideo->StatePlay();
+}
+
+void AipuAPI::StatePaused() {
+	flowVideo->StatePaused();
 }

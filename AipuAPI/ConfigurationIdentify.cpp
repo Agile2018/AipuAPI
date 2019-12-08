@@ -36,6 +36,15 @@ void ConfigurationIdentify::SetValueJSONToConfiguration() {
 		else if (it.key().asString() == FACEDETECTIONFORCED) {
 			faceDetectionForced = it->asInt();
 		}
+		else if (it.key().asString() == SIMILARITYTHRESHOLD) {
+			similarityThreshold = it->asInt();
+		}
+		else if (it.key().asString() == FACEDETECTIONTHRESHOLD) {
+			faceDetectionThreshold = it->asInt();
+		}
+		else if (it.key().asString() == BESTMATCHEDCANDIDATES) {
+			bestMatchedCandidates = it->asInt();
+		}
 	}
 
 }
@@ -63,6 +72,9 @@ void ConfigurationIdentify::ParseMapToJSON() {
 	params.insert(std::pair<std::string, std::int16_t>(AMAXEYE, maxEyeDistance));
 	params.insert(std::pair<std::string, std::int16_t>(IDENTIFICATIONSPEED, identificationSpeed));
 	params.insert(std::pair<std::string, std::int16_t>(FACEDETECTIONFORCED, faceDetectionForced));
+	params.insert(std::pair<std::string, std::int16_t>(SIMILARITYTHRESHOLD, similarityThreshold));
+	params.insert(std::pair<std::string, std::int16_t>(FACEDETECTIONTHRESHOLD, faceDetectionThreshold));
+	params.insert(std::pair<std::string, std::int16_t>(BESTMATCHEDCANDIDATES, bestMatchedCandidates));
 	std::map<std::string, std::int16_t>::const_iterator it = params.begin(),
 		end = params.end();
 
@@ -85,7 +97,9 @@ string ConfigurationIdentify::ParseMapToJSONForIdentify() {
 	params.insert(std::pair<std::string, std::int16_t>(AMINEYE, minEyeDistance));
 	params.insert(std::pair<std::string, std::int16_t>(AMAXEYE, maxEyeDistance));
 	params.insert(std::pair<std::string, std::int16_t>(FACEDETECTIONFORCED, faceDetectionForced));
-
+	params.insert(std::pair<std::string, std::int16_t>(SIMILARITYTHRESHOLD, similarityThreshold));
+	params.insert(std::pair<std::string, std::int16_t>(FACEDETECTIONTHRESHOLD, faceDetectionThreshold));
+	params.insert(std::pair<std::string, std::int16_t>(BESTMATCHEDCANDIDATES, bestMatchedCandidates));
 	std::map<std::string, std::int16_t>::const_iterator it = params.begin(),
 		end = params.end();
 

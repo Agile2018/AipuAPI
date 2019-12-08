@@ -20,7 +20,8 @@ int refreshInterval = 2000;
 int countFrameTracking = 0;
 bool flagFirstDetect = false;
 bool flagTracking = false;
-bool isDecodeImage = false;
+GstElement *pipeline;
+
 ThreadPool* pool = new ThreadPool(2);
 
 
@@ -128,6 +129,10 @@ void FlowVideo::LoadConfiguration(string nameFile) {
 	ObserverEvent();	
 	backRest->LoadConfiguration(nameFile);
 	//gst_init(NULL, NULL);
+}
+
+void FlowVideo::LoadConnectionIdentify() {
+	backRest->LoadConnectionIdentify();
 }
 
 unsigned char* LoadImageOfMemory(vector<unsigned char> buffer,
@@ -243,19 +248,7 @@ void BackProcessImage(char* data, int size, int client) {
 }
 
 void SetAtomicFrame(std::vector<uchar> bufferMap) {
-	//if (!isDecodeImage)
-	//{
-	//	isDecodeImage = true;
-	//	cv::Mat* prevFrame;
-	//	prevFrame = atomicFrame.exchange(new cv::Mat(cv::imdecode(bufferMap,
-	//		cv::IMREAD_UNCHANGED))); //CV_16U CV_8UC3
-	//	if (prevFrame) {
-
-	//		delete prevFrame;
-	//	}
-	//	isDecodeImage = false;
-	//}
-	
+		
 	cv::Mat* prevFrame;
 	prevFrame = atomicFrame.exchange(new cv::Mat(cv::imdecode(bufferMap,
 		cv::IMREAD_UNCHANGED))); 
@@ -339,27 +332,9 @@ GstFlowReturn NewSample(GstAppSink *appsink, gpointer /*data*/)
 	}
 	
 
-	//pool->submit(BackProcessImage, (char*)map.data, (int)map.size, client);
-
-	
-	
-		
-	//cv::Mat* prevFrame;
-	//prevFrame = atomicFrame.exchange(new cv::Mat(height * 3/2, width,
-	//	CV_8UC1, map.data)); //CV_16U CV_8UC3
-	//if (prevFrame) {
-
-	//	delete prevFrame;
-	//}
-
+	//pool->submit(BackProcessImage, (char*)map.data, (int)map.size, client);	
 	//g_print("size: %d width: %d height: %d \n", map.size, width, height);
-	//prevFrame = atomicFrame.exchange(new cv::Mat(cv::Size(map.size, 1),
-	//	CV_8UC1, (char*)map.data)); //CV_16U CV_8UC3 height + height / 2
-
-	//prevFrame = atomicFrame.exchange(new cv::Mat(cv::Size(img.cols, img.rows),
-	//	CV_8UC3, (void*)img.data, cv::Mat::AUTO_STEP)); //CV_16U CV_8UC3
-
-	//prevFrame = atomicFrame.exchange(&img); //char*
+	
 	
 	
 	gst_sample_unref(sample);	
@@ -442,20 +417,81 @@ void FlowVideo::InitITracking() {
 		IntToStr(faceConfidenceThresh).c_str()); //
 	error->CheckError(errorCode, error->medium);
 
-	errorCode = IFACE_SetParam(objectHandler,
-		IFACE_PARAMETER_TRACK_TRACKING_MODE,
-		IFACE_TRACK_TRACKING_MODE_OBJECT_TRACKING);
-	error->CheckError(errorCode, error->medium);
+	if (trackingMode == 0)
+	{
+		errorCode = IFACE_SetParam(objectHandler,
+			IFACE_PARAMETER_TRACK_TRACKING_MODE,
+			IFACE_TRACK_TRACKING_MODE_DEFAULT);
+		error->CheckError(errorCode, error->medium);
+	}
+	if (trackingMode == 1)
+	{
+		errorCode = IFACE_SetParam(objectHandler,
+			IFACE_PARAMETER_TRACK_TRACKING_MODE,
+			IFACE_TRACK_TRACKING_MODE_LIVENESS_DOT);
+		error->CheckError(errorCode, error->medium);
+	}
+	if (trackingMode == 2)
+	{
+		errorCode = IFACE_SetParam(objectHandler,
+			IFACE_PARAMETER_TRACK_TRACKING_MODE,
+			IFACE_TRACK_TRACKING_MODE_OBJECT_TRACKING);
+		error->CheckError(errorCode, error->medium);
+	}
 
-	errorCode = IFACE_SetParam(objectHandler,
-		IFACE_PARAMETER_TRACK_SPEED_ACCURACY_MODE,
-		IFACE_TRACK_SPEED_ACCURACY_MODE_FAST);
-	error->CheckError(errorCode, error->medium);
+	if (trackSpeed == 0)
+	{
+		errorCode = IFACE_SetParam(objectHandler,
+			IFACE_PARAMETER_TRACK_SPEED_ACCURACY_MODE,
+			IFACE_TRACK_SPEED_ACCURACY_MODE_ACCURATE);
+		error->CheckError(errorCode, error->medium);
+	}
+	
+	if (trackSpeed == 1)
+	{
+		errorCode = IFACE_SetParam(objectHandler,
+			IFACE_PARAMETER_TRACK_SPEED_ACCURACY_MODE,
+			IFACE_TRACK_SPEED_ACCURACY_MODE_BALANCED);
+		error->CheckError(errorCode, error->medium);
+	}
 
-	errorCode = IFACE_SetParam(objectHandler,
-		IFACE_PARAMETER_TRACK_MOTION_OPTIMIZATION,
-		IFACE_TRACK_MOTION_OPTIMIZATION_HISTORY_LONG_FAST);
-	error->CheckError(errorCode, error->medium);
+	if (trackSpeed == 2)
+	{
+		errorCode = IFACE_SetParam(objectHandler,
+			IFACE_PARAMETER_TRACK_SPEED_ACCURACY_MODE,
+			IFACE_TRACK_SPEED_ACCURACY_MODE_FAST);
+		error->CheckError(errorCode, error->medium);
+	}
+
+	if (motionOptimization == 0)
+	{
+		errorCode = IFACE_SetParam(objectHandler,
+			IFACE_PARAMETER_TRACK_MOTION_OPTIMIZATION,
+			IFACE_TRACK_MOTION_OPTIMIZATION_DISABLED);
+		error->CheckError(errorCode, error->medium);
+	}
+	
+	if (motionOptimization == 1)
+	{
+		errorCode = IFACE_SetParam(objectHandler,
+			IFACE_PARAMETER_TRACK_MOTION_OPTIMIZATION,
+			IFACE_TRACK_MOTION_OPTIMIZATION_HISTORY_LONG_ACCURATE);
+		error->CheckError(errorCode, error->medium);
+	}
+	if (motionOptimization == 2)
+	{
+		errorCode = IFACE_SetParam(objectHandler,
+			IFACE_PARAMETER_TRACK_MOTION_OPTIMIZATION,
+			IFACE_TRACK_MOTION_OPTIMIZATION_HISTORY_LONG_FAST);
+		error->CheckError(errorCode, error->medium);
+	}
+	if (motionOptimization == 3)
+	{
+		errorCode = IFACE_SetParam(objectHandler,
+			IFACE_PARAMETER_TRACK_MOTION_OPTIMIZATION,
+			IFACE_TRACK_MOTION_OPTIMIZATION_HISTORY_SHORT);
+		error->CheckError(errorCode, error->medium);
+	}
 
 	errorCode = IFACE_SetParam(objectHandler,
 		IFACE_PARAMETER_TRACK_DEEP_TRACK,
@@ -466,23 +502,18 @@ void FlowVideo::InitITracking() {
 }
 
 void FlowVideo::CaptureFlow(int optionFlow) {
-	/*int argc = 1;
 	
-	char appName[] = "AipuAPI.dll";    
-	char *arg[] = { appName, NULL };
-	char **argv[] = { arg, NULL };*/
-		
 
 	InitITracking();
 	
 	gchar *descr = DescriptionFlow(optionFlow);
 	
-	/*gst_init(&argc, argv);*/
+	
 	gst_init(NULL, NULL);
 	
 	GError *gError = nullptr;
-	GstElement *pipeline = gst_parse_launch(descr, &gError);
-	
+	/*GstElement *pipeline = gst_parse_launch(descr, &gError);*/
+	pipeline = gst_parse_launch(descr, &gError);
 	if (gError) {
 		g_print("could not construct pipeline: %s\n", gError->message);
 		g_error_free(gError);
@@ -541,28 +572,11 @@ void FlowVideo::CaptureFlow(int optionFlow) {
 			printf("   imdecode BUFFER  time: %d \n", durationMs1);*/
 
 		}
-
-		//cv::Mat* ptrFrameDraw = atomicMatDraw.load();
-		//cv::Mat frameDraw;
 		//cv::Mat* ptrFrameDraw = atomicFrame.load();
 		//if (ptrFrameDraw) {
-		//	//clock_t timeStart1 = clock();
-		//	//cv::Mat img = atomicFrame.load()[0].clone();
-		//	/*clock_t duration1 = clock() - timeStart1;
-		//	int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
-		//	printf("   CLONE MAT  time: %d \n", durationMs1);*/
-		//	//cv::Mat img = cv::imdecode(atomicFrame.load()[0], cv::IMREAD_UNCHANGED); //IMREAD_COLOR IMREAD_UNCHANGED
-		//	//cv::Mat img;
 		//	//atomicFrame.load()[0].convertTo(img, CV_32FC1, 255.0);
 		//	//cv::merge(atomicFrame.load(), 3, img);
 		//	//cv::cvtColor(atomicFrame.load()[0], img, cv::COLOR_GRAY2RGB); COLOR_YUV2BGRA_I420 COLOR_YUV420sp2RGB
-		//	cv::Mat img = atomicFrame.load()[0].clone();
-		//	//cout << atomicFrame.load()[0].cols << " " << atomicFrame.load()[0].rows << endl;
-		//	//cv::Mat in[] = { atomicFrame.load()[0], atomicFrame.load()[0], atomicFrame.load()[0] };
-		//	//cv::merge(in, 3, img);
-		//	//cv::cvtColor(atomicFrame.load()[0], img, cv::COLOR_GRAY2RGB);
-		//	/*atomicFrame.load()[0].convertTo(atomicFrame.load()[0], CV_8UC3);
-		//	cv::cvtColor(atomicFrame.load()[0], img, cv::COLOR_GRAY2RGB);*/
 		//	if (img.data != NULL) {
 		//		//DrawRectangles(img);
 		//		cv::imshow(nameWindow.c_str(), img);
@@ -572,8 +586,7 @@ void FlowVideo::CaptureFlow(int optionFlow) {
 		//			flagFlow = true;
 		//		}
 		//	}
-		//	
-		//}
+		//}	
 		
 	}
 	
@@ -704,4 +717,12 @@ void FlowVideo::ResetCountRepeatUser() {
 
 int FlowVideo::GetCountRepeatUser() {
 	return backRest->GetCountRepeatUser();
+}
+
+void FlowVideo::StatePlay() {
+	gst_element_set_state(GST_ELEMENT(pipeline), GST_STATE_PLAYING);
+}
+
+void FlowVideo::StatePaused() {
+	gst_element_set_state(GST_ELEMENT(pipeline), GST_STATE_PAUSED);
 }

@@ -665,6 +665,7 @@ void FaceModel::RecognitionFaceFiles(string file, int client) {
 	if (rawImage != NULL) {
 		templates = GetOneModel(rawImage, width, height, client);
 	}
+	delete rawImage;
 	isFinishLoadFiles = true;
 }
 
@@ -733,7 +734,20 @@ int FaceModel::GetOneModel(unsigned char* rawImage,
 	void* faceHandler;
 
 	errorCode = IFACE_CreateFaceHandler(&faceHandler);
-	error->CheckError(errorCode, error->medium);
+	error->CheckError(errorCode, error->medium);	
+
+	if (configuration->GetExtractionMode() == 0) {
+		errorCode = IFACE_SetParam(faceHandler,
+			IFACE_PARAMETER_FACETMPLEXT_SPEED_ACCURACY_MODE,
+			IFACE_FACETMPLEXT_SPEED_ACCURACY_MODE_ACCURATE);
+		error->CheckError(errorCode, error->medium);
+	}
+	if (configuration->GetExtractionMode() == 1) {
+		errorCode = IFACE_SetParam(faceHandler,
+			IFACE_PARAMETER_FACETMPLEXT_SPEED_ACCURACY_MODE,
+			IFACE_FACETMPLEXT_SPEED_ACCURACY_MODE_FAST);
+		error->CheckError(errorCode, error->medium);
+	}
 
 	if (configuration->GetModeDetect() == 1)
 	{
@@ -800,7 +814,7 @@ int FaceModel::GetOneModel(unsigned char* rawImage,
 
 	errorCode = IFACE_ReleaseEntity(faceHandler);
 	error->CheckError(errorCode, error->medium);
-
+	delete[] faceTemp;
 	return detectedFaces;
 }
 
