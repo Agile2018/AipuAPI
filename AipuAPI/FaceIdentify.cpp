@@ -35,10 +35,29 @@ void FaceIndentify::LoadConnection() {
 void FaceIndentify::SetParamsIdentify() {
 	int errorCode;
 	//std::string paramsIdentify = configuration->ParseMapToJSONForIdentify();	
-	std::string paramsIdentify = format->FormatString("{\"A_IdentificationSpeed\": %d, \"A_SimilarityThreshold\": %d, \"A_BestMatchedCandidates\": %d}",
+	/*std::string paramsIdentify = format->FormatString("{\"A_IdentificationSpeed\": %d, \"A_SimilarityThreshold\": %d, \"A_BestMatchedCandidates\": %d}",
 		configuration->GetIdentificationSpeed(), 
 		configuration->GetSimilarityThreshold(),
+		configuration->GetBestMatchedCandidates());*/
+
+	string paramsIdentify = format->FormatString("{\"A_IdentificationSpeed\": %d, ",
+		configuration->GetIdentificationSpeed());
+	paramsIdentify += format->FormatString("\"A_MinEyeDist\": %d, ",
+		configuration->GetMinEyeDistance());
+	paramsIdentify += format->FormatString("\"A_MaxEyeDist\": %d, ",
+		configuration->GetMaxEyeDistance());
+	paramsIdentify += format->FormatString("\"A_FaceDetectionForced\": %d, ",
+		configuration->GetFaceDetectionForced());
+	paramsIdentify += format->FormatString("\"A_SimilarityThreshold\": %d, ",
+		configuration->GetSimilarityThreshold());
+	paramsIdentify += format->FormatString("\"A_BestMatchedCandidates\": %d}",
 		configuration->GetBestMatchedCandidates());
+
+	/*std::string paramsIdentify = format->FormatString("{\"A_IdentificationSpeed\": %d, \"A_MinEyeDist\": %d, \"A_MaxEyeDist\": %d, \"A_FaceDetectionForced\": %d}",
+		configuration->GetIdentificationSpeed(),
+		configuration->GetMinEyeDistance(),
+		configuration->GetMaxEyeDistance(), configuration->GetFaceDetectionForced());*/
+
 	errorCode = setBiometricParameters(paramsIdentify.c_str());
 	
 	cout << "setBiometricParameters returns " << errorCode << endl;
@@ -78,7 +97,7 @@ void FaceIndentify::EnrollUser(Molded* modelImage) {
 		userForDatabase->SetMoldCropHeight(modelImage->GetMoldCropHeight());
 		userForDatabase->SetMoldCropLength(modelImage->GetMoldCropLength());
 		userForDatabase->SetMoldCropWidth(modelImage->GetMoldCropWidth());
-
+		
 		shootUser.on_next(userForDatabase);
 	}
 	flagEnroll = false;

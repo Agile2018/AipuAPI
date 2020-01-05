@@ -40,7 +40,13 @@ void Backrest::ProcessImageInBack(char* data, int size, int client) {
 }
 
 void Backrest::RecognitionFaceFiles(string file, int client) {
-	faceModel->RecognitionFaceFiles(file, client);
+	if (faceModel->GetIsFinishLoadFiles() == true)
+	{
+		faceModel->SetIsFinishLoadFiles(false);
+		faceModel->RecognitionFaceFiles(file, client);
+		faceModel->SetIsFinishLoadFiles(true);
+	}
+	
 }
 
 void Backrest::ObserverError() {
@@ -112,11 +118,13 @@ void Backrest::ObserverIdentifyFace() {
 			user->SetLastNameUser(lastName);
 			user->SetIdentificationUser(identification);			
 			database->InsertNewUser(user);
+			
 		}
 		else {
 			database->FindUserByIdFace(user->GetUserIdIFace(),
 				user->GetCropImageData(), user->GetMoldCropHeight(),
 				user->GetMoldCropWidth(), user->GetClient());
+			
 		}
 
 	});

@@ -6,6 +6,7 @@ Innovatrics* innovatrics;
 FlowVideo* flowVideo;
 string userJson;
 string messageError;
+std::vector<string> listUser;
 
 AipuAPI::AipuAPI()
 {
@@ -18,6 +19,7 @@ AipuAPI::~AipuAPI()
 {
 	delete innovatrics;
 	delete flowVideo;
+	listUser.clear();
 }
 
 void AipuAPI::Terminate() {
@@ -138,12 +140,24 @@ void AipuAPI::ObserverEvent() {
 	auto subscriptionUserDetect = observerUserDetect.subscribe([this](string jsonUser) {
 
 		userJson = jsonUser;
-		cout << userJson << endl;
+		listUser.push_back(userJson);
+
+		/*cout << userJson << endl;*/
 	});
 }
 
 string AipuAPI::GetUserJSON() {	
-	return userJson;
+
+	string user = "";
+
+	if (listUser.size() != 0)
+	{
+		user = *listUser.begin();
+		cout << user << endl;
+		listUser.erase(listUser.begin());
+	}
+
+	return user;
 }
 
 string AipuAPI::GetMessageError() {

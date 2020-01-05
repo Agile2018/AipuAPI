@@ -660,13 +660,13 @@ void FaceModel::RecognitionFaceFiles(string file, int client) {
 		}
 		
 	}*/
-	isFinishLoadFiles = false;
+	//isFinishLoadFiles = false;
 	unsigned char* rawImage = LoadFileImage(file, &width, &height, &lenght);
 	if (rawImage != NULL) {
 		templates = GetOneModel(rawImage, width, height, client);
 	}
 	delete rawImage;
-	isFinishLoadFiles = true;
+	//isFinishLoadFiles = true;
 }
 
 unsigned char* FaceModel::LoadFileImage(string image, int *width, int *height, int *length)
@@ -807,6 +807,7 @@ int FaceModel::GetOneModel(unsigned char* rawImage,
 	else {
 		error->CheckError(errorCode, error->medium);
 	}
+
 	for (int i = 0; i < maxFaces; i++) {
 		errorCode = IFACE_ReleaseEntity(faceTemp[i]);
 		error->CheckError(errorCode, error->medium);
