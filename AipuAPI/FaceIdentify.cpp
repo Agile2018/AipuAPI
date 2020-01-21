@@ -101,7 +101,7 @@ void FaceIndentify::EnrollUser(Molded* modelImage) {
 		shootUser.on_next(userForDatabase);
 	}
 	flagEnroll = false;
-
+	templateData = NULL;
 
 	//errorCode = IEngine_AddFaceTemplate(user, templateData, modelImage->GetMoldSize());
 	//if (errorCode == IENGINE_E_NOERROR) {

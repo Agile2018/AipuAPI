@@ -57,6 +57,8 @@ void FlowVideo::ObserverEvent() {
 		shootUserJSON.on_next(jsonUser);
 		
 	});
+
+	subscriptionDatabase.clear();
 }
 
 void FlowVideo::SetClient(int value) {

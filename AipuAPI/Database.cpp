@@ -92,7 +92,7 @@ void Database::AddImageUser(vector<unsigned char> image, int rows, int cols, int
 		error->CheckError(ERROR_DATABASE,
 			error->medium, e.what());
 	}
-
+	
 }
 
 void Database::BuildNewUser(User* user) {
@@ -196,7 +196,7 @@ void Database::QueryUserByFace(int idFaceUser, int client) {
 	}
 	else {
 		countRepeatOfSomeUser += 1;
-		if (countRepeatOfSomeUser > 7)
+		if (countRepeatOfSomeUser > 3)
 		{			
 			lastUserId = -1;
 		}

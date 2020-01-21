@@ -67,6 +67,8 @@ public:
 	void FastOnlyDetect(vector<unsigned char> buffer);
 	void Tracking(); //vector<unsigned char> buffer
 	void InitTracking(); 
+	void InitHandle();
+	void TerminateHandle();
 	ConfigurationIFace* configuration = new ConfigurationIFace();
 	Rx::subject<Molded*> templateImage;
 	Rx::observable<Molded*> observableTemplate = templateImage.get_observable();
@@ -92,6 +94,7 @@ private:
 	void* faceHandlerTracking;
 	void* objectHandler;
 	void* objects[TRACKED_OBJECTS];
+	void* faceHandlerGlobal;
 	int countFrameTracking = 0;
 	int countLowScore = 0;
 	int countNotDetect = 0;

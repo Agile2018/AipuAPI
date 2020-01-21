@@ -33,10 +33,16 @@ void FaceModel::ObserverError() {
 
 void FaceModel::Terminate() {
 	int errorCode;
-
+	TerminateHandle();
 	errorCode = IFACE_Terminate();
 	error->CheckError(errorCode, error->less);
 
+}
+
+void FaceModel::TerminateHandle() {
+	int errorCode;
+	errorCode = IFACE_ReleaseEntity(faceHandlerGlobal);
+	error->CheckError(errorCode, error->medium);
 }
 
 void FaceModel::TerminateTracking() {
@@ -640,7 +646,7 @@ int FaceModel::ModelOneToOne(vector<unsigned char> buffer, int client) {
 			{
 				templates = GetOneModel(rawImage, width, height, client);
 			}
-			delete rawImage;
+			delete[] rawImage;
 		}
 		else {
 			error->CheckError(errorCode, error->medium);
@@ -652,20 +658,29 @@ int FaceModel::ModelOneToOne(vector<unsigned char> buffer, int client) {
 
 void FaceModel::RecognitionFaceFiles(string file, int client) {
 	int lenght, width, height, templates;
-
-	/*for (int i = 0; i < sizeof(files) / sizeof(files[0]); i++) {
-		unsigned char* rawImage = LoadFileImage(files[i], &width, &height, &lenght);
-		if (rawImage != NULL) {
-			templates = GetOneModel(rawImage, width, height, client);
-		}
-		
-	}*/
+	
 	//isFinishLoadFiles = false;
+	
+	/*string nameFile = configuration->GetNameDirectory() + "/" + file;
+	ifstream data(nameFile, std::ifstream::in);
+	if (data.good()) {
+		string row;
+		while (data >> row && !row.empty()) {
+			unsigned char* rawImage = LoadFileImage(row, &width, &height, &lenght);
+			if (rawImage != NULL) {
+				templates = GetOneModel(rawImage, width, height, client);
+			}
+			delete rawImage;
+		}
+		data.close();
+	}*/
+
 	unsigned char* rawImage = LoadFileImage(file, &width, &height, &lenght);
 	if (rawImage != NULL) {
 		templates = GetOneModel(rawImage, width, height, client);
 	}
-	delete rawImage;
+	delete[] rawImage;
+	//memset(rawImage, 0, lenght);
 	//isFinishLoadFiles = true;
 }
 
@@ -724,6 +739,40 @@ void FaceModel::CreateTemplate(void* face, Molded* model, int client) {
 	error->CheckError(errorCode, error->medium);
 
 }
+void FaceModel::InitHandle() {
+	int errorCode;
+
+	errorCode = IFACE_CreateFaceHandler(&faceHandlerGlobal);
+	error->CheckError(errorCode, error->medium);
+
+	if (configuration->GetExtractionMode() == 0) {
+		errorCode = IFACE_SetParam(faceHandlerGlobal,
+			IFACE_PARAMETER_FACETMPLEXT_SPEED_ACCURACY_MODE,
+			IFACE_FACETMPLEXT_SPEED_ACCURACY_MODE_ACCURATE);
+		error->CheckError(errorCode, error->medium);
+	}
+	if (configuration->GetExtractionMode() == 1) {
+		errorCode = IFACE_SetParam(faceHandlerGlobal,
+			IFACE_PARAMETER_FACETMPLEXT_SPEED_ACCURACY_MODE,
+			IFACE_FACETMPLEXT_SPEED_ACCURACY_MODE_FAST);
+		error->CheckError(errorCode, error->medium);
+	}
+
+	if (configuration->GetModeDetect() == 1)
+	{
+		errorCode = IFACE_SetParam(faceHandlerGlobal,
+			IFACE_PARAMETER_FACEDET_SPEED_ACCURACY_MODE,
+			IFACE_FACEDET_SPEED_ACCURACY_MODE_BALANCED);
+		error->CheckError(errorCode, error->medium);
+	}
+	if (configuration->GetModeDetect() == 2)
+	{
+		errorCode = IFACE_SetParam(faceHandlerGlobal,
+			IFACE_PARAMETER_FACEDET_SPEED_ACCURACY_MODE,
+			IFACE_FACEDET_SPEED_ACCURACY_MODE_FAST);
+		error->CheckError(errorCode, error->medium);
+	}
+}
 
 int FaceModel::GetOneModel(unsigned char* rawImage,
 	int width, int height, int client) {
@@ -731,9 +780,9 @@ int FaceModel::GetOneModel(unsigned char* rawImage,
 	int detectedFaces = configuration->GetMaxDetect();
 	int errorCode;
 	void** faceTemp = new void*[maxFaces];
-	void* faceHandler;
+	//void* faceHandler;
 
-	errorCode = IFACE_CreateFaceHandler(&faceHandler);
+	/*errorCode = IFACE_CreateFaceHandler(&faceHandler);
 	error->CheckError(errorCode, error->medium);	
 
 	if (configuration->GetExtractionMode() == 0) {
@@ -762,7 +811,7 @@ int FaceModel::GetOneModel(unsigned char* rawImage,
 			IFACE_PARAMETER_FACEDET_SPEED_ACCURACY_MODE,
 			IFACE_FACEDET_SPEED_ACCURACY_MODE_FAST);
 		error->CheckError(errorCode, error->medium);
-	}
+	}*/
 
 	for (int i = 0; i < maxFaces; i++) {
 		errorCode = IFACE_CreateFace(&(faceTemp[i]));
@@ -771,7 +820,7 @@ int FaceModel::GetOneModel(unsigned char* rawImage,
 
 	errorCode = IFACE_DetectFaces(rawImage, width, height,
 		configuration->GetMinEyeDistance(), configuration->GetMaxEyeDistance(),
-		faceHandler, &detectedFaces, faceTemp);
+		faceHandlerGlobal, &detectedFaces, faceTemp);
 
 	if (errorCode == IFACE_OK) {
 
@@ -782,7 +831,7 @@ int FaceModel::GetOneModel(unsigned char* rawImage,
 				float faceConfidence;
 				void* face = faceTemp[i];
 
-				errorCode = IFACE_GetFaceBasicInfo(face, faceHandler,
+				errorCode = IFACE_GetFaceBasicInfo(face, faceHandlerGlobal,
 					&rightEyeX, &rightEyeY, &leftEyeX, &leftEyeY, &faceConfidence);
 				error->CheckError(errorCode, error->medium);
 				cout << "CONFIDENCE: " << faceConfidence << endl;
@@ -811,11 +860,13 @@ int FaceModel::GetOneModel(unsigned char* rawImage,
 	for (int i = 0; i < maxFaces; i++) {
 		errorCode = IFACE_ReleaseEntity(faceTemp[i]);
 		error->CheckError(errorCode, error->medium);
+		
 	}
 
-	errorCode = IFACE_ReleaseEntity(faceHandler);
-	error->CheckError(errorCode, error->medium);
+	/*errorCode = IFACE_ReleaseEntity(faceHandler);
+	error->CheckError(errorCode, error->medium);*/
 	delete[] faceTemp;
+
 	return detectedFaces;
 }
 

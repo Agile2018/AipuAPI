@@ -133,6 +133,8 @@ void AipuAPI::ObserverEvent() {
 		cout << messageError << endl;
 	});
 
+	subscriptionError.clear();
+
 	auto observerUserDetect = flowVideo->observableUserJSON.map([](string jsonUser) {
 		return jsonUser;
 	});
@@ -144,6 +146,8 @@ void AipuAPI::ObserverEvent() {
 
 		/*cout << userJson << endl;*/
 	});
+
+	subscriptionUserDetect.clear();
 }
 
 string AipuAPI::GetUserJSON() {	

@@ -97,8 +97,11 @@ void Backrest::ObserverTemplateImage()
 		
 		faceIdentify->EnrollUser(modelImage);
 		
+		delete modelImage;
+		
 	});
-
+	
+	subscriptionTemplate.clear();
 }
 
 void Backrest::ObserverIdentifyFace() {
@@ -118,17 +121,17 @@ void Backrest::ObserverIdentifyFace() {
 			user->SetLastNameUser(lastName);
 			user->SetIdentificationUser(identification);			
 			database->InsertNewUser(user);
-			
+			delete user;
 		}
 		else {
 			database->FindUserByIdFace(user->GetUserIdIFace(),
 				user->GetCropImageData(), user->GetMoldCropHeight(),
 				user->GetMoldCropWidth(), user->GetClient());
-			
+			delete user;
 		}
 
 	});
-
+	subscriptionIdentifyUser.clear();
 }
 
 void Backrest::ObserverDatabase() {
@@ -140,7 +143,7 @@ void Backrest::ObserverDatabase() {
 		
 		shootUserJSON.on_next(jsonUser);
 	});
-
+	subscriptionDatabase.clear();
 }
 
 void Backrest::SetDirectoryConfiguration() {
@@ -163,7 +166,7 @@ void Backrest::LoadConfiguration(string nameFile) {
 void Backrest::SetNameFileConfigurationFace(string name) {
 	faceModel->configuration->SetNameFileConfiguration(name);
 	faceModel->configuration->ParseJSONToObject();
-
+	faceModel->InitHandle();
 }
 
 void Backrest::SetNameFileConfigurationIdentify(string name) {
@@ -189,6 +192,8 @@ void Backrest::SetIsRegister(bool option) {
 
 void Backrest::ReloadRecognitionFace() {
 	faceModel->configuration->ParseJSONToObject();
+	faceModel->TerminateHandle();
+	faceModel->InitHandle();
 	faceIdentify->configuration->ParseJSONToObject();
 	faceIdentify->LoadConnection();
 }
