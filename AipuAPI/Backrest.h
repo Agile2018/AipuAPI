@@ -26,6 +26,11 @@ public:
 	void ResetCountRepeatUser();
 	int GetCountRepeatUser();
 	void LoadConnectionIdentify();
+	bool FinishProcessInBack() {
+		return isFree;
+	}
+	void ProcessFaceTracking(void* faceTracking, int client);
+
 	Rx::subject<Either*> errorSubject;
 	Rx::observable<Either*> observableError = errorSubject.get_observable();
 

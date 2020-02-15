@@ -140,7 +140,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile />
       <PrecompiledHeaderOutputFile />
-      <AdditionalIncludeDirectories>C:\mongo-c-driver\include\libmongoc-1.0;C:\mongo-c-driver\include\libbson-1.0;C:\mongo-cxx-driver\install\include\bsoncxx\v_noabi;C:\mongo-cxx-driver\install\include\mongocxx\v_noabi;C:\boost_1_70_0;D:\install\Innovatrics SDKs\1.0.0.2\include;C:\Program Files\Innovatrics\IDKit SDK\include;C:\opencv\build\include;D:\gstreamer\1.0\x86_64\include;D:\gstreamer\1.0\x86_64\lib\glib-2.0\include;D:\gstreamer\1.0\x86_64\include\glib-2.0;D:\gstreamer\1.0\x86_64\include\gstreamer-1.0;C:\Users\david\Downloads\cuda-samples-master\Common;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include;C:\Program Files %28x86%29\JSONCPP\include;C:\Program Files\Innovatrics\IFace SDK\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\mongo-c-driver\include\libmongoc-1.0;C:\mongo-c-driver\include\libbson-1.0;C:\mongo-cxx-driver\install\include\bsoncxx\v_noabi;C:\mongo-cxx-driver\install\include\mongocxx\v_noabi;C:\boost_1_70_0;D:\install\Innovatrics SDKs\1.0.0.2\include;C:\Program Files\Innovatrics\IDKit SDK\include;C:\opencv\include;D:\gstreamer\1.0\x86_64\include;D:\gstreamer\1.0\x86_64\lib\glib-2.0\include;D:\gstreamer\1.0\x86_64\include\glib-2.0;D:\gstreamer\1.0\x86_64\include\gstreamer-1.0;C:\Users\david\Downloads\cuda-samples-master\Common;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include;C:\Program Files %28x86%29\JSONCPP\include;C:\Program Files\Innovatrics\IFace SDK\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -148,8 +148,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <AdditionalLibraryDirectories>C:\mongo-cxx-driver\install\lib;D:\install\Innovatrics SDKs\1.0.0.2\lib;C:\Program Files\Innovatrics\IDKit SDK\lib;C:\opencv\build\x64\vc15\lib;D:\gstreamer\1.0\x86_64\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\lib\x64;C:\Program Files %28x86%29\JSONCPP\lib;C:\Program Files\Innovatrics\IFace SDK\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>iface.lib;idkit.lib;jsoncpp.lib;cudart_static.lib;gobject-2.0.lib;glib-2.0.lib;gstreamer-1.0.lib;gstapp-1.0.lib;opencv_world400.lib;AFaceAPI.lib;bsoncxx.lib;mongocxx.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\mongo-cxx-driver\install\lib;D:\install\Innovatrics SDKs\1.0.0.2\lib;C:\Program Files\Innovatrics\IDKit SDK\lib;C:\opencv\x64\vc15\lib;D:\gstreamer\1.0\x86_64\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\lib\x64;C:\Program Files %28x86%29\JSONCPP\lib;C:\Program Files\Innovatrics\IFace SDK\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>iface.lib;idkit.lib;jsoncpp.lib;cudart_static.lib;gobject-2.0.lib;glib-2.0.lib;gstreamer-1.0.lib;gstapp-1.0.lib;opencv_world420.lib;AFaceAPI.lib;bsoncxx.lib;mongocxx.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

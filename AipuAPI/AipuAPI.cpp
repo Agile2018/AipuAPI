@@ -83,10 +83,12 @@ void AipuAPI::SetWidthFrame(int value) {
 }
 
 void AipuAPI::SetHeightFrame(int value) {
+
 	flowVideo->SetHeightFrame(value);
 }
 
 void AipuAPI::CaptureFlow(int optionFlow) {
+	
 	flowVideo->CaptureFlow(optionFlow);
 }
 

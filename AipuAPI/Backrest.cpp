@@ -27,16 +27,19 @@ Backrest::~Backrest()
 }
 
 void Backrest::ProcessImageInBack(char* data, int size, int client) {
-	if (isFree)
-	{
+	/*if (isFree)
+	{*/
 		isFree = false;
 		unsigned char* ucharData = reinterpret_cast<unsigned char*> (data);
 		std::vector<uchar> buffer(ucharData, ucharData + size);		
 		int count = faceModel->ModelOneToOne(buffer, client);
 		buffer.clear();
 		isFree = true;
-	}
+	//}
 	
+}
+void Backrest::ProcessFaceTracking(void* faceTracking, int client) {
+	faceModel->ProcessFaceTracking(faceTracking, client);
 }
 
 void Backrest::RecognitionFaceFiles(string file, int client) {
@@ -97,7 +100,7 @@ void Backrest::ObserverTemplateImage()
 		
 		faceIdentify->EnrollUser(modelImage);
 		
-		delete modelImage;
+		//delete modelImage;
 		
 	});
 	
@@ -121,13 +124,13 @@ void Backrest::ObserverIdentifyFace() {
 			user->SetLastNameUser(lastName);
 			user->SetIdentificationUser(identification);			
 			database->InsertNewUser(user);
-			delete user;
+			//delete user;
 		}
 		else {
 			database->FindUserByIdFace(user->GetUserIdIFace(),
 				user->GetCropImageData(), user->GetMoldCropHeight(),
 				user->GetMoldCropWidth(), user->GetClient());
-			delete user;
+			//delete user;
 		}
 
 	});

@@ -196,7 +196,7 @@ void Database::QueryUserByFace(int idFaceUser, int client) {
 	}
 	else {
 		countRepeatOfSomeUser += 1;
-		if (countRepeatOfSomeUser > 3)
+		if (countRepeatOfSomeUser > 2)
 		{			
 			lastUserId = -1;
 		}

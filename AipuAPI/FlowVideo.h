@@ -147,7 +147,7 @@ private:
 	void TerminateITracking();
 	gchar* DescriptionFlow(int optionFlow);
 	void ObserverEvent();
-	
+	void ObserverFace();
 };
 
 

@@ -211,17 +211,17 @@ void FaceModel::GetFaceCropRectangle(void* face) {
 
 void FaceModel::FaceCropImage(void* face, Molded* model) {
 	int cropWidth, cropHeight, cropLength, errorCode;
-	void* faceHandler;
+	/*void* faceHandler;
 
 	errorCode = IFACE_CreateFaceHandler(&faceHandler);
-	error->CheckError(errorCode, error->medium);
+	error->CheckError(errorCode, error->medium);*/
 
 
-	errorCode = IFACE_GetFaceCropImage(face, faceHandler, IFACE_FACE_CROP_METHOD_FULL_FRONTAL,
+	errorCode = IFACE_GetFaceCropImage(face, faceHandlerGlobal, IFACE_FACE_CROP_METHOD_FULL_FRONTAL,
 		&cropWidth, &cropHeight, &cropLength, NULL);
 	error->CheckError(errorCode, error->medium);
 	unsigned char* cropImageData = new unsigned char[cropLength];
-	errorCode = IFACE_GetFaceCropImage(face, faceHandler, IFACE_FACE_CROP_METHOD_FULL_FRONTAL,
+	errorCode = IFACE_GetFaceCropImage(face, faceHandlerGlobal, IFACE_FACE_CROP_METHOD_FULL_FRONTAL,
 		&cropWidth, &cropHeight, &cropLength, cropImageData);
 	error->CheckError(errorCode, error->medium);
 
@@ -233,8 +233,8 @@ void FaceModel::FaceCropImage(void* face, Molded* model) {
 		
 	}
 
-	errorCode = IFACE_ReleaseEntity(faceHandler);
-	error->CheckError(errorCode, error->medium);
+	/*errorCode = IFACE_ReleaseEntity(faceHandler);
+	error->CheckError(errorCode, error->medium);*/
 	delete[] cropImageData;
 }
 
@@ -709,14 +709,14 @@ unsigned char* FaceModel::LoadFileImage(string image, int *width, int *height, i
 void FaceModel::CreateTemplate(void* face, Molded* model, int client) {
 	int errorCode;
 	int templateSize;
-	void* faceHandler;
+	/*void* faceHandler;
 
 	errorCode = IFACE_CreateFaceHandler(&faceHandler);
-	error->CheckError(errorCode, error->medium);
-	errorCode = IFACE_CreateTemplate(face, faceHandler, 0, &templateSize, NULL);
+	error->CheckError(errorCode, error->medium);*/
+	errorCode = IFACE_CreateTemplate(face, faceHandlerGlobal, 0, &templateSize, NULL);
 	if (errorCode == IFACE_OK) {
 		char* templateData = new char[templateSize];
-		errorCode = IFACE_CreateTemplate(face, faceHandler, 0,
+		errorCode = IFACE_CreateTemplate(face, faceHandlerGlobal, 0,
 			&templateSize, templateData);
 		if (errorCode != IFACE_OK) {
 			error->CheckError(errorCode, error->medium);
@@ -735,8 +735,8 @@ void FaceModel::CreateTemplate(void* face, Molded* model, int client) {
 	else {
 		error->CheckError(errorCode, error->medium);
 	}
-	errorCode = IFACE_ReleaseEntity(faceHandler);
-	error->CheckError(errorCode, error->medium);
+	/*errorCode = IFACE_ReleaseEntity(faceHandler);
+	error->CheckError(errorCode, error->medium);*/
 
 }
 void FaceModel::InitHandle() {
@@ -868,6 +868,25 @@ int FaceModel::GetOneModel(unsigned char* rawImage,
 	delete[] faceTemp;
 
 	return detectedFaces;
+}
+
+void FaceModel::ProcessFaceTracking(void* faceTracking, int client) {
+	float rightEyeX, rightEyeY, leftEyeX, leftEyeY;
+	float faceConfidence;
+	int errorCode;	
+
+	errorCode = IFACE_GetFaceBasicInfo(faceTracking, faceHandlerGlobal,
+		&rightEyeX, &rightEyeY, &leftEyeX, &leftEyeY, &faceConfidence);
+	error->CheckError(errorCode, error->medium);
+	cout << "CONFIDENCE: " << faceConfidence << endl;
+	if (faceConfidence > configuration->GetPrecision())
+	{
+		cout << "GREATER OR EQUAL ACCURACY .." << configuration->GetPrecision() << endl;
+		Molded* model = new Molded();
+		FaceCropImage(faceTracking, model);
+		CreateTemplate(faceTracking, model, client);
+
+	}
 }
 
 std::string FaceModel::IntToStr(int num)

@@ -69,6 +69,7 @@ public:
 	void InitTracking(); 
 	void InitHandle();
 	void TerminateHandle();
+	void ProcessFaceTracking(void* faceTracking, int client);
 	ConfigurationIFace* configuration = new ConfigurationIFace();
 	Rx::subject<Molded*> templateImage;
 	Rx::observable<Molded*> observableTemplate = templateImage.get_observable();
