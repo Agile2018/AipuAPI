@@ -592,9 +592,12 @@ void FlowVideo::CaptureFlow(int optionFlow) {
 	cv::namedWindow(nameWindow.c_str(), cv::WINDOW_NORMAL); //cv::WINDOW_GUI_EXPANDED
 	cv::moveWindow(nameWindow.c_str(), 1200, 100);
 	//cv::resizeWindow(nameWindow.c_str(), widthFrame, heightFrame);
+	/*GMainContext *context;
+	context = g_main_context_new();*/
+
 	while (!flagFlow) {
-		g_main_iteration(false);
-		
+		//g_main_iteration(false);
+		g_main_context_iteration(NULL, false);
 		//GBuffer* frameBuffer = atomicBuffer.load();
 		if (atomicBuffer.load())
 		{
@@ -714,7 +717,7 @@ gchar* FlowVideo::DescriptionFlow(int optionFlow) {
 			"! application/x-rtp, payload=96 ! rtph264depay ! h264parse ! avdec_h264 "
 			"! decodebin ! videoconvert n-threads=4 ! videoscale method=%d ! videorate "
 			"! video/x-raw, width=(int)%d, height=(int)%d, format=(string)I420, framerate=30/1 "
-			"! jpegenc quality=30 "
+			"! jpegenc quality=40 "
 			"! appsink name=sink emit-signals=true sync=false max-buffers=1 drop=true",
 			ipCamera.c_str(), videoScaleMethod, widthFrame, heightFrame
 		);  // latency=0  drop-on-latency=true
@@ -736,7 +739,7 @@ gchar* FlowVideo::DescriptionFlow(int optionFlow) {
 			"! decodebin ! videoconvert n-threads=4 ! videoscale method=%d "
 			"! videobalance contrast=1 brightness=0 saturation=1 "
 			"! video/x-raw, width=(int)%d, height=(int)%d, format=(string)I420  "
-			"! jpegenc quality=30 "
+			"! jpegenc quality=40 "
 			"! appsink name=sink emit-signals=true sync=true max-buffers=1 drop=true",
 			deviceVideo.c_str(), videoScaleMethod, widthFrame, heightFrame
 		); 
