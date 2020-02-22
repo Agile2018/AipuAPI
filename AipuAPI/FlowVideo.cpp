@@ -24,7 +24,7 @@ GstElement *pipeline;
 
 ThreadPool* pool = new ThreadPool(2);
 std::mutex mtx;
-
+std::deque<GBuffer> frameQueue;
 Rx::subject<void*> faceSubject;
 Rx::observable<void*> observableFace = faceSubject.get_observable();
 Rx::subscriber<void*> shootFace = faceSubject.get_subscriber();
@@ -344,15 +344,17 @@ GstFlowReturn NewSample(GstAppSink *appsink, gpointer /*data*/)
 			tbi.detach();
 		}*/
 		
+		GBuffer gbuffer((char*)map.data, (int)map.size);
+		frameQueue.push_back(gbuffer);
 	
-		if (mtx.try_lock()) {
+		/*if (mtx.try_lock()) {
 			GBuffer* prevFrameBuffer = atomicBuffer.exchange(new GBuffer((char*)map.data, (int)map.size));
 			if (prevFrameBuffer)
 			{
 				delete prevFrameBuffer;
 			}
 			mtx.unlock();
-		}
+		}*/
 		
 		//pool->submit(SetAtomicFrame, (char*)map.data, (int)map.size);
 
@@ -599,36 +601,56 @@ void FlowVideo::CaptureFlow(int optionFlow) {
 		//g_main_iteration(false);
 		g_main_context_iteration(NULL, false);
 		//GBuffer* frameBuffer = atomicBuffer.load();
-		if (atomicBuffer.load())
-		{
-						
-			try
-			{
-				//clock_t timeStart1 = clock();
-				mtx.lock();
-				cv::Mat img = cv::imdecode(atomicBuffer.load()->GetBuffer(), cv::IMREAD_UNCHANGED);
-				mtx.unlock();
-				/*clock_t duration1 = clock() - timeStart1;
-				int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
-				printf("   imdecode BUFFER  time: %d \n", durationMs1);*/
-				if (img.data != NULL)
-				{
-					DrawRectangles(img);
-					cv::imshow(nameWindow.c_str(), img);
-					cv::waitKey(1);
-					//cv::waitKey(1000/sequenceFps);
-					/*if (cv::waitKey(1000 / sequenceFps) == 27) {
-						flagFlow = true;
-					}*/
-										
-				}
-			}
-			catch (const std::exception& ex)
-			{
-				cout << ex.what() << endl;
-			}
 
+		if (frameQueue.size() > 0) {
+			// this lags pretty badly even when grabbing frames from webcam 
+			clock_t timeStart1 = clock();
+			GBuffer gbuffer = frameQueue.front();
+			cv::Mat img = cv::imdecode(gbuffer.GetBuffer(), cv::IMREAD_UNCHANGED);
+			clock_t duration1 = clock() - timeStart1;
+			int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
+			printf("   imdecode BUFFER  time: %d \n", durationMs1);
+			if (img.data != NULL) {
+				DrawRectangles(img);
+				cv::imshow(nameWindow.c_str(), img);
+				cv::waitKey(1);
+			}
+			frameQueue.clear();
 		}
+
+
+		//if (atomicBuffer.load())
+		//{
+		//				
+		//	try
+		//	{
+		//		//clock_t timeStart1 = clock();
+		//		mtx.lock();
+		//		cv::Mat img = cv::imdecode(atomicBuffer.load()->GetBuffer(), cv::IMREAD_UNCHANGED);
+		//		mtx.unlock();
+		//		/*clock_t duration1 = clock() - timeStart1;
+		//		int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
+		//		printf("   imdecode BUFFER  time: %d \n", durationMs1);*/
+		//		if (img.data != NULL)
+		//		{
+		//			DrawRectangles(img);
+		//			cv::imshow(nameWindow.c_str(), img);
+		//			cv::waitKey(1);
+		//			//cv::waitKey(1000/sequenceFps);
+		//			/*if (cv::waitKey(1000 / sequenceFps) == 27) {
+		//				flagFlow = true;
+		//			}*/
+		//								
+		//		}
+		//	}
+		//	catch (const std::exception& ex)
+		//	{
+		//		cout << ex.what() << endl;
+		//	}
+
+		//}
+
+
 		//delete frameBuffer;
 
 
@@ -665,7 +687,7 @@ void FlowVideo::CaptureFlow(int optionFlow) {
 	}	
 	gst_element_set_state(GST_ELEMENT(pipeline), GST_STATE_NULL);
 	gst_object_unref(GST_OBJECT(pipeline));
-	std::atomic_init(&atomicBuffer, 0);	
+	//std::atomic_init(&atomicBuffer, 0);	
 	cv::destroyWindow(nameWindow.c_str());
 	for (int i = 0; i < NUM_TRACKED_OBJECTS; i++) {
 		ClearCoordinatesImage(i);
