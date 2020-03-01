@@ -171,14 +171,14 @@ void Database::FindUserByIdFace(int idFaceUser, vector<unsigned char> image,
 }
 
 void Database::QueryUserByFace(int idFaceUser, int client) {
-	if (lastUserId != idFaceUser || lastClient != client)
-	{
-		countRepeatOfSomeUser = 0;
+	/*if (lastUserId != idFaceUser || lastClient != client)
+	{*/
+		//countRepeatOfSomeUser = 0;
 		auto clientConnection = MongoAccess::instance().GetConnection();
 		mongocxx::database database = (*clientConnection)[configuration->GetNameDatabase().c_str()];
 		mongocxx::collection collection = database[COLLECTION_USER.c_str()];
-		lastUserId = idFaceUser;
-		lastClient = client;
+		/*lastUserId = idFaceUser;
+		lastClient = client;*/
 		boost::optional<bsoncxx::v_noabi::document::value> cursor = collection
 			.find_one(make_document(kvp("id_face", idFaceUser)));
 
@@ -193,14 +193,14 @@ void Database::QueryUserByFace(int idFaceUser, int client) {
 		values.push_back(to_string(client));
 		BuildJSONUser(values);
 
-	}
+	/*}
 	else {
 		countRepeatOfSomeUser += 1;
 		if (countRepeatOfSomeUser > 2)
 		{			
 			lastUserId = -1;
 		}
-	}
+	}*/
 
 }
 

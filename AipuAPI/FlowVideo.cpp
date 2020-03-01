@@ -25,10 +25,14 @@ GstElement *pipeline;
 ThreadPool* pool = new ThreadPool(2);
 std::mutex mtx;
 std::deque<GBuffer> frameQueue;
+
 Rx::subject<void*> faceSubject;
 Rx::observable<void*> observableFace = faceSubject.get_observable();
 Rx::subscriber<void*> shootFace = faceSubject.get_subscriber();
 
+Rx::subject<bool> trackStateSubject;
+Rx::observable<bool> observableTrackState = trackStateSubject.get_observable();
+Rx::subscriber<bool> shootTrackState = trackStateSubject.get_subscriber();
 
 FlowVideo::FlowVideo()
 {
@@ -52,6 +56,14 @@ void FlowVideo::ObserverFace() {
 		backRest->ProcessFaceTracking(face, client);
 		
 		});
+
+	auto observerTrackStateManagement = observableTrackState.map([](bool result) {
+		return result;
+		});
+
+
+	auto subscriptionErrorTrackStateManagement = observerTrackStateManagement.subscribe([this](bool result) {
+		TrackObjectState();});
 }
 
 void FlowVideo::ObserverEvent() {
@@ -182,97 +194,194 @@ unsigned char* LoadImageOfMemory(vector<unsigned char> buffer,
 
 }
 
+void ClearAllCoordinatesImage() {
+	for (int i = 0; i < NUM_TRACKED_OBJECTS; i++) {
+		ClearCoordinatesImage(i);
+	}
+}
+
 void FaceTracking(char* data, int size) {	
-	int width, height, errorCode, countDesolation = 0;
+	int width, height, errorCode; //, countDesolation = 0
+		
+	//clock_t timeStart1 = clock();	
+
 	unsigned char* ucharData = reinterpret_cast<unsigned char*> (data);
 	std::vector<uchar> vectorData(ucharData, ucharData + size);
 	unsigned char* rawImageData = LoadImageOfMemory(vectorData, &width, &height);
 	
-	void* face;
-	errorCode = IFACE_CreateFace(&face);
+	/*void* face;
+	errorCode = IFACE_CreateFace(&face);*/
 
 	if (rawImageData != NULL) {
 
 		errorCode = IFACE_TrackObjects(objectHandler, rawImageData,
-			width, height, countFrameTracking*timeDeltaMs, NUM_TRACKED_OBJECTS, objects);		
-
+			width, height, countFrameTracking*timeDeltaMs, NUM_TRACKED_OBJECTS, objects);	
+		if (errorCode == IFACE_OK) {
+			shootTrackState.on_next(true);
+		}
+		
+		
 		//error->CheckError(errorCode, error->medium);
 		//cout << "Error TrackObject: " << errorCode << endl;
-		for (int trackedObjectIndex = 0; trackedObjectIndex < NUM_TRACKED_OBJECTS;
-			trackedObjectIndex++)
-		{
-
-			float bbX, bbY, bbWidth, bbHeight;
-			IFACE_TrackedObjectState trackedState;
-
-			errorCode = IFACE_GetObjectState(objects[trackedObjectIndex],
-				objectHandler, &trackedState);
-
-			//error->CheckError(errorCode, error->medium);
-
-			if (trackedState == IFACE_TRACKED_OBJECT_STATE_CLEAN) {
-
-				ClearCoordinatesImage(trackedObjectIndex);
-				countDesolation++;
-				if (countDesolation == NUM_TRACKED_OBJECTS && !flagFirstDetect)
-				{
-					AdvanceVideoStream();
-				}
-				//cout << "STATE_CLEAN" << endl;
-				continue;
-			}
-			//*******
-			errorCode = IFACE_GetFaceFromObject(objects[trackedObjectIndex], 
-				objectHandler, face, IFACE_TRACKED_OBJECT_FACE_TYPE_LAST_DISCOVERY);
-			if (face != NULL)
-			{
-				shootFace.on_next(face);
-			}
-			//*******
-			switch (trackedState)
-			{
-			case IFACE_TRACKED_OBJECT_STATE_TRACKED:
-				flagFirstDetect = true;
-				errorCode = IFACE_GetObjectBoundingBox(objects[trackedObjectIndex],
-					objectHandler, &bbX, &bbY, &bbWidth, &bbHeight);
-
-				//error->CheckError(errorCode, error->medium);
-				BuildCoordinatesImage(bbX, bbY, bbWidth, bbHeight, trackedObjectIndex);
-				printf("   face id is tracked. Its bounding box :(%f, %f), (%f, %f), Face score : , Object score : \n", bbX, bbY, bbWidth, bbHeight);
-				break;
-			case IFACE_TRACKED_OBJECT_STATE_COVERED:
-				errorCode = IFACE_GetObjectBoundingBox(objects[trackedObjectIndex],
-					objectHandler, &bbX, &bbY, &bbWidth, &bbHeight);
-				//error->CheckError(errorCode, error->medium);
-				BuildCoordinatesImage(bbX, bbY, bbWidth, bbHeight, trackedObjectIndex);
-				break;
-			case IFACE_TRACKED_OBJECT_STATE_SUSPEND:
-				ClearCoordinatesImage(trackedObjectIndex);
-				printf("STATE SUSPEND INDEX: %d\n", trackedObjectIndex);
-
-				break;
-			case IFACE_TRACKED_OBJECT_STATE_LOST:
-				void *newObj;								
-				errorCode = IFACE_CreateObject(&newObj);				
-				objects[trackedObjectIndex] = newObj;
-				ClearCoordinatesImage(trackedObjectIndex);
-				flagFirstDetect = false;
-				printf("STATE LOST INDEX: %d\n", trackedObjectIndex);
-
-				break;
-			case IFACE_TRACKED_OBJECT_STATE_CLEAN:
-				printf("STATE CLEAN INDEX: %d\n", trackedObjectIndex);
-
-				break;
-			}
-
-		}
-		countFrameTracking++;
-		delete[] rawImageData;
 		
+
+		//for (int trackedObjectIndex = 0; trackedObjectIndex < NUM_TRACKED_OBJECTS;
+		//	trackedObjectIndex++)
+		//{
+
+		//	float bbX, bbY, bbWidth, bbHeight;
+		//	IFACE_TrackedObjectState trackedState;
+
+		//	errorCode = IFACE_GetObjectState(objects[trackedObjectIndex],
+		//		objectHandler, &trackedState);
+
+		//	//error->CheckError(errorCode, error->medium);
+
+		//	if (trackedState == IFACE_TRACKED_OBJECT_STATE_CLEAN) {
+
+		//		ClearCoordinatesImage(trackedObjectIndex);
+		//		countDesolation++;
+		//		if (countDesolation == NUM_TRACKED_OBJECTS && !flagFirstDetect)
+		//		{
+		//			AdvanceVideoStream();
+		//		}
+		//		//cout << "STATE_CLEAN" << endl;
+		//		continue;
+		//	}
+		//	//*******
+		//	errorCode = IFACE_GetFaceFromObject(objects[trackedObjectIndex], 
+		//		objectHandler, face, IFACE_TRACKED_OBJECT_FACE_TYPE_LAST_DISCOVERY);
+		//	if (face != NULL)
+		//	{
+		//		shootFace.on_next(face);
+		//	}
+		//	//*******
+		//	switch (trackedState)
+		//	{
+		//	case IFACE_TRACKED_OBJECT_STATE_TRACKED:
+		//		flagFirstDetect = true;
+		//		errorCode = IFACE_GetObjectBoundingBox(objects[trackedObjectIndex],
+		//			objectHandler, &bbX, &bbY, &bbWidth, &bbHeight);
+
+		//		//error->CheckError(errorCode, error->medium);
+		//		BuildCoordinatesImage(bbX, bbY, bbWidth, bbHeight, trackedObjectIndex);
+		//		printf("   face id is tracked. Its bounding box :(%f, %f), (%f, %f), Face score : , Object score : \n", bbX, bbY, bbWidth, bbHeight);
+		//		break;
+		//	case IFACE_TRACKED_OBJECT_STATE_COVERED:
+		//		errorCode = IFACE_GetObjectBoundingBox(objects[trackedObjectIndex],
+		//			objectHandler, &bbX, &bbY, &bbWidth, &bbHeight);
+		//		//error->CheckError(errorCode, error->medium);
+		//		BuildCoordinatesImage(bbX, bbY, bbWidth, bbHeight, trackedObjectIndex);
+		//		break;
+		//	case IFACE_TRACKED_OBJECT_STATE_SUSPEND:
+		//		ClearCoordinatesImage(trackedObjectIndex);
+		//		printf("STATE SUSPEND INDEX: %d\n", trackedObjectIndex);
+
+		//		break;
+		//	case IFACE_TRACKED_OBJECT_STATE_LOST:
+		//		void *newObj;								
+		//		errorCode = IFACE_CreateObject(&newObj);				
+		//		objects[trackedObjectIndex] = newObj;
+		//		ClearCoordinatesImage(trackedObjectIndex);
+		//		flagFirstDetect = false;
+		//		printf("STATE LOST INDEX: %d\n", trackedObjectIndex);
+
+		//		break;
+		//	case IFACE_TRACKED_OBJECT_STATE_CLEAN:
+		//		printf("STATE CLEAN INDEX: %d\n", trackedObjectIndex);
+
+		//		break;
+		//	}
+
+		//}
+		//countFrameTracking++;
+
+
+		delete[] rawImageData;		
 	}
 	flagTracking = false;
 	vectorData.clear();
+	
+	/*clock_t duration1 = clock() - timeStart1;
+	int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
+	printf("   LOAD IMAGE AND TRACKING time: %d \n", durationMs1);*/
+}
+
+void FlowVideo::TrackObjectState() {
+	int errorCode, countDesolation = 0;
+	
+	for (int trackedObjectIndex = 0; trackedObjectIndex < NUM_TRACKED_OBJECTS;
+		trackedObjectIndex++)
+	{
+
+		float bbX, bbY, bbWidth, bbHeight;
+		IFACE_TrackedObjectState trackedState;
+
+		errorCode = IFACE_GetObjectState(objects[trackedObjectIndex],
+			objectHandler, &trackedState);
+
+		//error->CheckError(errorCode, error->medium);
+
+		if (trackedState == IFACE_TRACKED_OBJECT_STATE_CLEAN) {
+
+			//ClearCoordinatesImage(trackedObjectIndex);
+			countDesolation++;
+			if (countDesolation == NUM_TRACKED_OBJECTS && !flagFirstDetect)
+			{
+				AdvanceVideoStream();
+			}
+			//cout << "STATE_CLEAN" << endl;
+			continue;
+		}
+		//*******
+		void* face;
+		errorCode = IFACE_CreateFace(&face);
+		errorCode = IFACE_GetFaceFromObject(objects[trackedObjectIndex],
+			objectHandler, face, IFACE_TRACKED_OBJECT_FACE_TYPE_LAST_DISCOVERY);
+		if (face != NULL)
+		{
+			shootFace.on_next(face);
+		}
+		//*******
+		switch (trackedState)
+		{
+		case IFACE_TRACKED_OBJECT_STATE_TRACKED:
+			flagFirstDetect = true;
+			errorCode = IFACE_GetObjectBoundingBox(objects[trackedObjectIndex],
+				objectHandler, &bbX, &bbY, &bbWidth, &bbHeight);
+
+			//error->CheckError(errorCode, error->medium);
+			BuildCoordinatesImage(bbX, bbY, bbWidth, bbHeight, trackedObjectIndex);
+			printf("   face id is tracked. Its bounding box :(%f, %f), (%f, %f), Face score : , Object score : \n", bbX, bbY, bbWidth, bbHeight);
+			break;
+		case IFACE_TRACKED_OBJECT_STATE_COVERED:
+			errorCode = IFACE_GetObjectBoundingBox(objects[trackedObjectIndex],
+				objectHandler, &bbX, &bbY, &bbWidth, &bbHeight);
+			//error->CheckError(errorCode, error->medium);
+			BuildCoordinatesImage(bbX, bbY, bbWidth, bbHeight, trackedObjectIndex);
+			break;
+		case IFACE_TRACKED_OBJECT_STATE_SUSPEND:
+			//ClearCoordinatesImage(trackedObjectIndex);
+			printf("STATE SUSPEND INDEX: %d\n", trackedObjectIndex);
+
+			break;
+		case IFACE_TRACKED_OBJECT_STATE_LOST:
+			//ClearCoordinatesImage(trackedObjectIndex);
+			void *newObj;
+			errorCode = IFACE_CreateObject(&newObj);
+			objects[trackedObjectIndex] = newObj;			
+			flagFirstDetect = false;
+			printf("STATE LOST INDEX: %d\n", trackedObjectIndex);
+
+			break;
+		case IFACE_TRACKED_OBJECT_STATE_CLEAN:
+			printf("STATE LOST CLEAN OBJECT INDEX: %d\n", trackedObjectIndex);
+
+			break;
+		}
+
+	}
+	countFrameTracking++;
 }
 
 void BackProcessImage(char* data, int size, int client) {
@@ -329,32 +438,36 @@ GstFlowReturn NewSample(GstAppSink *appsink, gpointer /*data*/)
 	
 	if (map.data != NULL)
 	{
+	
 		if (!flagTracking)
 		{
 			flagTracking = true;
+			pool->submit(ClearAllCoordinatesImage);
 			pool->submit(FaceTracking, (char*)map.data, (int)map.size);
 			
 			//std::async(std::launch::async, FaceTracking, (char*)map.data, (int)map.size);
 			/*std::thread tti(FaceTracking, (char*)map.data, (int)map.size);
 			tti.detach(); */
 		}
+
+
 		/*if (backRest->FinishProcessInBack())
 		{
 			std::thread tbi(BackProcessImage, (char*)map.data, (int)map.size, client);
 			tbi.detach();
 		}*/
 		
-		GBuffer gbuffer((char*)map.data, (int)map.size);
-		frameQueue.push_back(gbuffer);
+		/*GBuffer gbuffer((char*)map.data, (int)map.size);
+		frameQueue.push_back(gbuffer);*/
 	
-		/*if (mtx.try_lock()) {
+		if (mtx.try_lock()) {
 			GBuffer* prevFrameBuffer = atomicBuffer.exchange(new GBuffer((char*)map.data, (int)map.size));
 			if (prevFrameBuffer)
 			{
 				delete prevFrameBuffer;
 			}
 			mtx.unlock();
-		}*/
+		}
 		
 		//pool->submit(SetAtomicFrame, (char*)map.data, (int)map.size);
 
@@ -602,53 +715,53 @@ void FlowVideo::CaptureFlow(int optionFlow) {
 		g_main_context_iteration(NULL, false);
 		//GBuffer* frameBuffer = atomicBuffer.load();
 
-		if (frameQueue.size() > 0) {
-			// this lags pretty badly even when grabbing frames from webcam 
-			clock_t timeStart1 = clock();
-			GBuffer gbuffer = frameQueue.front();
-			cv::Mat img = cv::imdecode(gbuffer.GetBuffer(), cv::IMREAD_UNCHANGED);
-			clock_t duration1 = clock() - timeStart1;
-			int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
-			printf("   imdecode BUFFER  time: %d \n", durationMs1);
-			if (img.data != NULL) {
-				DrawRectangles(img);
-				cv::imshow(nameWindow.c_str(), img);
-				cv::waitKey(1);
-			}
-			frameQueue.clear();
-		}
-
-
-		//if (atomicBuffer.load())
-		//{
-		//				
-		//	try
-		//	{
-		//		//clock_t timeStart1 = clock();
-		//		mtx.lock();
-		//		cv::Mat img = cv::imdecode(atomicBuffer.load()->GetBuffer(), cv::IMREAD_UNCHANGED);
-		//		mtx.unlock();
-		//		/*clock_t duration1 = clock() - timeStart1;
-		//		int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
-		//		printf("   imdecode BUFFER  time: %d \n", durationMs1);*/
-		//		if (img.data != NULL)
-		//		{
-		//			DrawRectangles(img);
-		//			cv::imshow(nameWindow.c_str(), img);
-		//			cv::waitKey(1);
-		//			//cv::waitKey(1000/sequenceFps);
-		//			/*if (cv::waitKey(1000 / sequenceFps) == 27) {
-		//				flagFlow = true;
-		//			}*/
-		//								
-		//		}
+		//if (frameQueue.size() > 0) {
+		//	// this lags pretty badly even when grabbing frames from webcam 
+		//	clock_t timeStart1 = clock();
+		//	GBuffer gbuffer = frameQueue.front();
+		//	cv::Mat img = cv::imdecode(gbuffer.GetBuffer(), cv::IMREAD_UNCHANGED);
+		//	clock_t duration1 = clock() - timeStart1;
+		//	int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
+		//	printf("   imdecode BUFFER  time: %d \n", durationMs1);
+		//	if (img.data != NULL) {
+		//		DrawRectangles(img);
+		//		cv::imshow(nameWindow.c_str(), img);
+		//		cv::waitKey(1);
 		//	}
-		//	catch (const std::exception& ex)
-		//	{
-		//		cout << ex.what() << endl;
-		//	}
-
+		//	frameQueue.clear();
 		//}
+
+
+		if (atomicBuffer.load())
+		{
+						
+			try
+			{
+				//clock_t timeStart1 = clock();
+				mtx.lock();
+				cv::Mat img = cv::imdecode(atomicBuffer.load()->GetBuffer(), cv::IMREAD_UNCHANGED);
+				mtx.unlock();
+				/*clock_t duration1 = clock() - timeStart1;
+				int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
+				printf("   imdecode BUFFER  time: %d \n", durationMs1);*/
+				if (img.data != NULL)
+				{
+					DrawRectangles(img);
+					cv::imshow(nameWindow.c_str(), img);
+					cv::waitKey(1);
+					//cv::waitKey(1000/sequenceFps);
+					/*if (cv::waitKey(1000 / sequenceFps) == 27) {
+						flagFlow = true;
+					}*/
+										
+				}
+			}
+			catch (const std::exception& ex)
+			{
+				cout << ex.what() << endl;
+			}
+
+		}
 
 
 		//delete frameBuffer;
@@ -687,11 +800,12 @@ void FlowVideo::CaptureFlow(int optionFlow) {
 	}	
 	gst_element_set_state(GST_ELEMENT(pipeline), GST_STATE_NULL);
 	gst_object_unref(GST_OBJECT(pipeline));
-	//std::atomic_init(&atomicBuffer, 0);	
+	std::atomic_init(&atomicBuffer, 0);	
 	cv::destroyWindow(nameWindow.c_str());
-	for (int i = 0; i < NUM_TRACKED_OBJECTS; i++) {
+	/*for (int i = 0; i < NUM_TRACKED_OBJECTS; i++) {
 		ClearCoordinatesImage(i);
-	}
+	}*/
+	ClearAllCoordinatesImage();
 	countFrameTracking = 0;
 	//TerminateITracking();
 	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -733,8 +847,16 @@ gchar* FlowVideo::DescriptionFlow(int optionFlow) {
 
 	switch (optionFlow) {
 	case 1: // IP CAMERA
-		
 		descr = g_strdup_printf(
+			"rtspsrc location=%s "
+			"! application/x-rtp, payload=96 ! rtph264depay ! h264parse ! avdec_h264 "
+			"! decodebin ! videoconvert n-threads=4 "
+			"! video/x-raw, format=(string)I420 "
+			"! jpegenc "
+			"! appsink name=sink emit-signals=true sync=false max-buffers=1 drop=true",
+			ipCamera.c_str()
+		);
+		/*descr = g_strdup_printf(
 			"rtspsrc location=%s "
 			"! application/x-rtp, payload=96 ! rtph264depay ! h264parse ! avdec_h264 "
 			"! decodebin ! videoconvert n-threads=4 ! videoscale method=%d ! videorate "
@@ -742,21 +864,42 @@ gchar* FlowVideo::DescriptionFlow(int optionFlow) {
 			"! jpegenc quality=40 "
 			"! appsink name=sink emit-signals=true sync=false max-buffers=1 drop=true",
 			ipCamera.c_str(), videoScaleMethod, widthFrame, heightFrame
-		);  // latency=0  drop-on-latency=true
+		);  */
+
+		// latency=0  drop-on-latency=true
 		break;
 	case 2: // FILE		
 		descr = g_strdup_printf(
 			"filesrc location=%s "
+			"! decodebin ! videoconvert n-threads=4 "			
+			"! video/x-raw, format=(string)I420"
+			"! jpegenc quality=100 "
+			"! appsink name=sink emit-signals=true sync=true max-buffers=1 drop=true",
+			fileVideo.c_str()
+		);
+		/*descr = g_strdup_printf(
+			"filesrc location=%s "
 			"! decodebin ! videoconvert n-threads=4 ! videoscale method=%d "
 			"! videobalance contrast=1 brightness=0 saturation=1 "
 			"! video/x-raw, width=(int)%d, height=(int)%d, format=(string)I420"	
-			"! jpegenc quality=40 "
+			"! jpegenc "
 			"! appsink name=sink emit-signals=true sync=true max-buffers=1 drop=true",
 			fileVideo.c_str(), videoScaleMethod, widthFrame, heightFrame
-		);// "! jpegenc quality=20 " pngenc RGB , format=(string)I420 BGR
+		);*/
+		
+		// "! jpegenc quality=20 " pngenc RGB , format=(string)I420 BGR
 		break;
 	case 3: // CAMERA   
 		descr = g_strdup_printf(
+			"v4l2src device=%s "
+			"! decodebin ! videoconvert n-threads=4 "			
+			"! video/x-raw, format=(string)I420  "
+			"! jpegenc "
+			"! appsink name=sink emit-signals=true sync=true max-buffers=1 drop=true",
+			deviceVideo.c_str()
+		);
+
+		/*descr = g_strdup_printf(
 			"v4l2src device=%s "
 			"! decodebin ! videoconvert n-threads=4 ! videoscale method=%d "
 			"! videobalance contrast=1 brightness=0 saturation=1 "
@@ -764,7 +907,7 @@ gchar* FlowVideo::DescriptionFlow(int optionFlow) {
 			"! jpegenc quality=40 "
 			"! appsink name=sink emit-signals=true sync=true max-buffers=1 drop=true",
 			deviceVideo.c_str(), videoScaleMethod, widthFrame, heightFrame
-		); 
+		); */
 		break;
 	}
 	return descr;

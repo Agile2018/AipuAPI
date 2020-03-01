@@ -121,9 +121,9 @@ private:
 	int minEyeDistance = 20;          // minimal eye distance in input image
 	int maxEyeDistance = 200;         // maximal eye distance in input image
 	int faceConfidenceThresh = 450;         // face detection confidence threshold		
-	int trackingMode = 0;
-	int trackSpeed = 0;
-	int motionOptimization = 0;
+	int trackingMode = 1;
+	int trackSpeed = 2;
+	int motionOptimization = 2;
 	string ipCamera;
 	string fileVideo;
 	string deviceVideo = "/dev/video0";
@@ -148,6 +148,7 @@ private:
 	gchar* DescriptionFlow(int optionFlow);
 	void ObserverEvent();
 	void ObserverFace();
+	void TrackObjectState();
 };
 
 
